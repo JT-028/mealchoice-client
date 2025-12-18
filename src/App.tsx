@@ -28,6 +28,7 @@ import { CustomerSettingsPage } from './pages/customer/CustomerSettingsPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { PendingSellersPage } from './pages/admin/PendingSellersPage';
 import { SellersPage } from './pages/admin/SellersPage';
+import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 
 // Component to redirect users to their role-specific dashboard
 function DashboardRedirect() {
@@ -55,6 +56,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
               {/* Dashboard Redirect */}
               <Route

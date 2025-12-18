@@ -62,7 +62,7 @@ export async function getAllSellers(token: string, filters?: {
   if (filters?.verified !== undefined) params.append('verified', String(filters.verified));
   if (filters?.market) params.append('market', filters.market);
   if (filters?.active !== undefined) params.append('active', String(filters.active));
-  
+
   const url = `${API_BASE_URL}/admin/sellers${params.toString() ? '?' + params.toString() : ''}`;
   const response = await fetch(url, {
     headers: { 'Authorization': `Bearer ${token}` },
@@ -118,6 +118,22 @@ export async function rejectSeller(token: string, sellerId: string): Promise<Adm
   const response = await fetch(`${API_BASE_URL}/admin/sellers/${sellerId}/reject`, {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Create new seller account
+export async function createSeller(
+  token: string,
+  data: { name: string; email: string; marketLocation: string }
+): Promise<AdminResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/sellers`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
   });
   return response.json();
 }

@@ -1,26 +1,21 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
 import { registerUser } from '@/api/auth';
-import { UtensilsCrossed, Loader2, Eye, EyeOff, User, Store } from 'lucide-react';
+import { UtensilsCrossed, Loader2, Eye, EyeOff, CheckCircle, Mail } from 'lucide-react';
 
 export function RegisterPage() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'customer' | 'seller'>('customer');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,11 +35,10 @@ export function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await registerUser({ name, email, password, role });
+      const response = await registerUser({ name, email, password, role: 'customer' });
 
-      if (response.success && response.token && response.user) {
-        login(response.token, response.user);
-        navigate('/dashboard');
+      if (response.success) {
+        setRegistrationSuccess(true);
       } else {
         setError(response.message || 'Registration failed');
       }
@@ -55,6 +49,35 @@ export function RegisterPage() {
       setIsLoading(false);
     }
   };
+
+  // Show success message after registration
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10" />
+        <Card className="relative w-full max-w-md shadow-lg">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Check Your Email!</h2>
+            <p className="text-muted-foreground mb-4">
+              We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-6">
+              <Mail className="h-4 w-4" />
+              <span>Click the link in the email to activate your account</span>
+            </div>
+            <Button asChild variant="outline">
+              <Link to="/login">Go to Login</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -75,7 +98,7 @@ export function RegisterPage() {
             Join Meal Choice and start planning smarter meals
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -83,33 +106,6 @@ export function RegisterPage() {
                 {error}
               </div>
             )}
-
-            {/* Role Selection */}
-            <div className="space-y-2">
-              <Label>I want to join as</Label>
-              <Tabs value={role} onValueChange={(v) => setRole(v as 'customer' | 'seller')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="customer" className="gap-2">
-                    <User className="h-4 w-4" />
-                    Customer
-                  </TabsTrigger>
-                  <TabsTrigger value="seller" className="gap-2">
-                    <Store className="h-4 w-4" />
-                    Seller
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="customer" className="mt-3">
-                  <p className="text-sm text-muted-foreground">
-                    Plan meals, track budgets, and order from local markets.
-                  </p>
-                </TabsContent>
-                <TabsContent value="seller" className="mt-3">
-                  <p className="text-sm text-muted-foreground">
-                    Manage orders, track inventory, and reach more customers.
-                  </p>
-                </TabsContent>
-              </Tabs>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -184,7 +180,7 @@ export function RegisterPage() {
                   Creating account...
                 </>
               ) : (
-                `Create ${role === 'customer' ? 'Customer' : 'Seller'} Account`
+                'Create Account'
               )}
             </Button>
           </form>

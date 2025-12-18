@@ -56,7 +56,7 @@ export function AdminDashboard() {
             {/* Pending Alert */}
             {stats.pendingSellers > 0 && (
               <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
-                <CardContent className="pt-6">
+                <CardContent>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
@@ -85,7 +85,7 @@ export function AdminDashboard() {
             {/* Stats Grid */}
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -98,7 +98,7 @@ export function AdminDashboard() {
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium">Verified Sellers</CardTitle>
                   <UserCheck className="h-4 w-4 text-green-500" />
                 </CardHeader>
@@ -111,7 +111,7 @@ export function AdminDashboard() {
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
                   <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>

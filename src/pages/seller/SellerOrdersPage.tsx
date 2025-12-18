@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SellerLayout } from '@/components/layout/SellerLayout';
+import { PendingVerification } from '@/components/seller/PendingVerification';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +29,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 const statusFlow = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
 export function SellerOrdersPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,10 @@ export function SellerOrdersPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchOrders = async () => {
-    if (!token) return;
+    if (!token || !user?.isVerified) {
+      setLoading(false);
+      return;
+    }
     
     try {
       const response = await getSellerOrders(token, selectedStatus);
@@ -53,7 +57,7 @@ export function SellerOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [token, selectedStatus]);
+  }, [token, selectedStatus, user?.isVerified]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     if (!token) return;
@@ -91,6 +95,15 @@ export function SellerOrdersPage() {
 
   const totalActive = (statusCounts.pending || 0) + (statusCounts.confirmed || 0) + 
                       (statusCounts.preparing || 0) + (statusCounts.ready || 0);
+
+  // Block unverified sellers
+  if (!user?.isVerified) {
+    return (
+      <SellerLayout>
+        <PendingVerification message="You cannot view orders until your account is verified by an admin." showSteps={false} />
+      </SellerLayout>
+    );
+  }
 
   return (
     <SellerLayout>

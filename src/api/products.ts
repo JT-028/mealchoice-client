@@ -25,7 +25,7 @@ export interface ProductFormData {
   quantity: number;
   unit: string;
   category: string;
-  marketLocation: string;
+  marketLocation?: string;
   isAvailable?: boolean;
   lowStockThreshold?: number;
 }

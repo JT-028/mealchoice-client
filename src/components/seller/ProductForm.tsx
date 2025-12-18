@@ -18,7 +18,6 @@ import {
   type ProductFormData,
   PRODUCT_CATEGORIES,
   PRODUCT_UNITS,
-  MARKET_LOCATIONS,
 } from '@/api/products';
 import { Loader2 } from 'lucide-react';
 
@@ -29,7 +28,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const isEditing = !!product;
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -39,7 +38,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     quantity: product?.quantity || 0,
     unit: product?.unit || 'piece',
     category: product?.category || 'others',
-    marketLocation: product?.marketLocation || user?.marketLocation || '',
     isAvailable: product?.isAvailable ?? true,
     lowStockThreshold: product?.lowStockThreshold || 10,
   });
@@ -66,10 +64,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       return;
     }
 
-    if (!formData.marketLocation) {
-      setError('Market location is required');
-      return;
-    }
+
 
     setLoading(true);
 
@@ -197,26 +192,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         </div>
       </div>
 
-      {/* Market Location */}
-      <div className="space-y-2">
-        <Label>Market Location *</Label>
-        <Select
-          value={formData.marketLocation}
-          onValueChange={(value) => setFormData({ ...formData, marketLocation: value })}
-          disabled={loading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select market" />
-          </SelectTrigger>
-          <SelectContent>
-            {MARKET_LOCATIONS.map((market) => (
-              <SelectItem key={market.value} value={market.value}>
-                {market.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+
 
       {/* Low Stock Threshold */}
       <div className="space-y-2">

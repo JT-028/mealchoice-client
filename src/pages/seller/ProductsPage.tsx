@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SellerLayout } from '@/components/layout/SellerLayout';
+import { PendingVerification } from '@/components/seller/PendingVerification';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +47,7 @@ import {
 } from 'lucide-react';
 
 export function ProductsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,10 @@ export function ProductsPage() {
   const [deleting, setDeleting] = useState(false);
 
   const fetchProducts = async () => {
-    if (!token) return;
+    if (!token || !user?.isVerified) {
+      setLoading(false);
+      return;
+    }
     
     try {
       const response = await getSellerProducts(token);
@@ -77,7 +81,7 @@ export function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [token]);
+  }, [token, user?.isVerified]);
 
   // Filter products based on search
   useEffect(() => {
@@ -141,6 +145,15 @@ export function ProductsPage() {
     return <Badge variant="secondary">In Stock</Badge>;
   };
 
+  // Block unverified sellers
+  if (!user?.isVerified) {
+    return (
+      <SellerLayout>
+        <PendingVerification message="You cannot add products until your account is verified by an admin." />
+      </SellerLayout>
+    );
+  }
+
   return (
     <SellerLayout>
       <div className="space-y-6">
@@ -151,7 +164,7 @@ export function ProductsPage() {
             <p className="text-muted-foreground">Manage your product inventory</p>
           </div>
           <Button onClick={handleAddClick}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             Add Product
           </Button>
         </div>

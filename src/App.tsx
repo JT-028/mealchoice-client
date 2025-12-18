@@ -19,9 +19,18 @@ import { CartPage } from './pages/customer/CartPage';
 import { CheckoutPage } from './pages/customer/CheckoutPage';
 import { OrdersPage } from './pages/customer/OrdersPage';
 
+// Admin pages
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { PendingSellersPage } from './pages/admin/PendingSellersPage';
+import { SellersPage } from './pages/admin/SellersPage';
+
 // Component to redirect users to their role-specific dashboard
 function DashboardRedirect() {
   const { user } = useAuth();
+  
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
   
   if (user?.role === 'seller') {
     return <Navigate to="/seller" replace />;
@@ -47,6 +56,42 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardRedirect />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Admin Routes */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/pending" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <PendingSellersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/sellers" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <SellersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <div className="p-8 text-center text-muted-foreground">
+                    Admin settings coming soon...
+                  </div>
                 </ProtectedRoute>
               } 
             />

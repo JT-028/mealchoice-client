@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: 'customer' | 'seller' | 'admin';
   marketLocation?: string;
+  isVerified?: boolean;
 }
 
 export interface AuthResponse {

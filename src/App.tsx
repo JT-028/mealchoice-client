@@ -1,87 +1,23 @@
-import { useState, useEffect } from 'react'
-import { fetchHealth } from './api'
-import { fetchMeals, createMeal, type Meal } from './api/meals'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { LandingPage } from './pages/LandingPage';
+import { Dashboard } from './pages/Dashboard';
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [healthStatus, setHealthStatus] = useState<{ status: string; message: string; database?: string } | null>(null)
-  const [meals, setMeals] = useState<Meal[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function init() {
-      try {
-        const [health, mealsData] = await Promise.all([fetchHealth(), fetchMeals()])
-        setHealthStatus(health)
-        setMeals(mealsData)
-      } catch (error) {
-        console.error('Initialization failed:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    init()
-  }, [])
-
-  const handleAddMeal = async () => {
-    try {
-      const names = ['Pizza', 'Salad', 'Burger', 'Pasta', 'Sushi'];
-      const randomName = names[Math.floor(Math.random() * names.length)];
-      const randomCalories = Math.floor(Math.random() * 800) + 200;
-      
-      const newMeal = await createMeal(randomName, randomCalories);
-      setMeals([newMeal, ...meals]);
-    } catch (error) {
-      alert('Failed to add meal');
-    }
-  };
-
   return (
-    <>
-
-      <h1>Mealwise + MERN Stack</h1>
-      
-      <div className="card">
-        <div style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3>Backend Status:</h3>
-          {loading ? (
-            <p>Checking connectivity...</p>
-          ) : healthStatus ? (
-            <p style={{ color: '#4CAF50' }}>✅ {healthStatus.message} (DB: {healthStatus.database || 'Connected'})</p>
-          ) : (
-            <p style={{ color: '#F44336' }}>❌ Could not connect to backend</p>
-          )}
-        </div>
-
-        <button onClick={() => setCount((count) => count + 1)} style={{ marginRight: '10px' }}>
-          count is {count}
-        </button>
+    <BrowserRouter>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
         
-        <button onClick={handleAddMeal} style={{ backgroundColor: '#646cff', color: 'white' }}>
-          Add Random Meal
-        </button>
-
-        <div style={{ marginTop: '20px' }}>
-          <h3>Recent Meals:</h3>
-          {meals.length === 0 ? (
-            <p>No meals added yet.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {meals.map((meal) => (
-                <li key={meal._id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                  <strong>{meal.name}</strong> - {meal.calories} kcal
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-      
-      <p className="read-the-docs">
-        Edit <code>src/App.tsx</code> to continue building Mealwise
-      </p>
-    </>
-  )
+        {/* Authenticated Routes (placeholder) */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Auth Routes (to be implemented) */}
+        <Route path="/login" element={<LandingPage />} />
+        <Route path="/register" element={<LandingPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

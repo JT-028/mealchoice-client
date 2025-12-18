@@ -36,7 +36,7 @@
   --sidebar-accent-foreground: oklch(0.4254 0.1159 144.3078);
   --sidebar-border: oklch(0.8805 0.0208 74.6428);
   --sidebar-ring: oklch(0.5234 0.1347 144.1672);
-  --font-sans: Montserrat, sans-serif;
+  --font-sans: 'Nunito', sans-serif;
   --font-serif: Merriweather, serif;
   --font-mono: Source Code Pro, monospace;
   --radius: 0.5rem;
@@ -94,7 +94,7 @@
   --sidebar-accent-foreground: oklch(0.9423 0.0097 72.6595);
   --sidebar-border: oklch(0.3942 0.0265 142.9926);
   --sidebar-ring: oklch(0.6731 0.1624 144.2083);
-  --font-sans: Montserrat, sans-serif;
+  --font-sans: 'Nunito', sans-serif;
   --font-serif: Merriweather, serif;
   --font-mono: Source Code Pro, monospace;
   --radius: 0.5rem;
@@ -191,6 +191,9 @@
 
 @layer base {
   body {
+    font-family: var(--font-sans);
     letter-spacing: var(--tracking-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }

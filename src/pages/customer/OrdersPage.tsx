@@ -88,7 +88,7 @@ export function OrdersPage() {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-base">
-                          Order from {typeof order.seller === 'object' ? order.seller.name : 'Seller'}
+                          Order from {order.seller && typeof order.seller === 'object' ? order.seller.name : 'Seller'}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                           <MapPin className="h-3 w-3" />
@@ -104,13 +104,26 @@ export function OrdersPage() {
                   <CardContent>
                     <div className="space-y-3">
                       {/* Items */}
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {order.items.map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span>
-                              {item.name} x{item.quantity}
-                            </span>
-                            <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                          <div key={idx} className="flex items-center gap-3 text-sm">
+                            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                              {item.image ? (
+                                <img
+                                  src={`http://localhost:5000${item.image}`}
+                                  alt={item.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex-1 flex justify-between">
+                              <span>
+                                {item.name} x{item.quantity}
+                              </span>
+                              <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
                           </div>
                         ))}
                       </div>

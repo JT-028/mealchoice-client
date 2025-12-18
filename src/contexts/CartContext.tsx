@@ -10,6 +10,7 @@ export interface CartItem {
   sellerId: string;
   sellerName: string;
   marketLocation: string;
+  image?: string;
 }
 
 interface CartContextType {
@@ -74,7 +75,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         unit: product.unit,
         sellerId: seller._id,
         sellerName: seller.name,
-        marketLocation: product.marketLocation
+        marketLocation: product.marketLocation,
+        image: product.image
       }];
     });
   };

@@ -78,8 +78,16 @@ export function CartPage() {
             <CardContent className="space-y-4">
               {group.items.map((item) => (
                 <div key={item.productId} className="flex items-center gap-4 py-3 border-b last:border-0">
-                  <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+                  <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                    {item.image ? (
+                      <img
+                        src={`http://localhost:5000${item.image}`}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+                    )}
                   </div>
                   
                   <div className="flex-1 min-w-0">

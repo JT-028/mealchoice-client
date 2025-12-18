@@ -246,7 +246,7 @@ export function BudgetSettings() {
 
             {/* Tips */}
             <Card className="border-dashed">
-              <CardHeader className="pb-2">
+              <CardHeader>
                 <CardTitle className="text-sm">💡 Budget Tips</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground space-y-2">
@@ -262,3 +262,4 @@ export function BudgetSettings() {
     </CustomerLayout>
   );
 }
+``

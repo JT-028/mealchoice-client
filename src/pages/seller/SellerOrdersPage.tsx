@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSellerOrders, updateOrderStatus, type Order } from '@/api/orders';
+import { getSellerOrders, updateOrderStatus, verifyPayment, type Order } from '@/api/orders';
 import {
   Package,
   Loader2,
@@ -14,8 +14,11 @@ import {
   CheckCircle,
   XCircle,
   ChefHat,
-  User
+  User,
+  CreditCard
 } from 'lucide-react';
+
+const API_BASE_URL = 'http://localhost:5000';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
@@ -35,6 +38,7 @@ export function SellerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [verifyingPayment, setVerifyingPayment] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     if (!token || !user?.isVerified) {
@@ -72,6 +76,22 @@ export function SellerOrdersPage() {
       console.error('Error updating order:', error);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const handleVerifyPayment = async (orderId: string) => {
+    if (!token) return;
+
+    setVerifyingPayment(orderId);
+    try {
+      const response = await verifyPayment(token, orderId);
+      if (response.success) {
+        fetchOrders();
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+    } finally {
+      setVerifyingPayment(null);
     }
   };
 
@@ -154,6 +174,7 @@ export function SellerOrdersPage() {
                   const status = statusConfig[order.status] || statusConfig.pending;
                   const nextStatus = getNextStatus(order.status);
                   const isUpdating = updating === order._id;
+                  const isVerifying = verifyingPayment === order._id;
                   
                   return (
                     <Card key={order._id}>
@@ -179,10 +200,19 @@ export function SellerOrdersPage() {
                           {/* Items */}
                           <div className="space-y-1 bg-muted/50 p-3 rounded-lg">
                             {order.items.map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-sm">
-                                <span>
-                                  {item.name} x{item.quantity} {item.unit}
-                                </span>
+                              <div key={idx} className="flex justify-between items-center text-sm py-1">
+                                <div className="flex items-center gap-2">
+                                  {item.image && (
+                                    <img 
+                                      src={`${API_BASE_URL}${item.image}`} 
+                                      alt={item.name} 
+                                      className="h-8 w-8 rounded object-cover border bg-background"
+                                    />
+                                  )}
+                                  <span>
+                                    {item.name} x{item.quantity} {item.unit}
+                                  </span>
+                                </div>
                                 <span>₱{(item.price * item.quantity).toFixed(2)}</span>
                               </div>
                             ))}
@@ -199,9 +229,67 @@ export function SellerOrdersPage() {
                             </p>
                           )}
 
+                          {/* Payment Verification Section */}
+                          <div className="border-t pt-3 mt-3">
+                             <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium">Payment Status</span>
+                                </div>
+                                {order.isPaymentVerified ? (
+                                  <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 flex gap-1">
+                                    <CheckCircle className="h-3 w-3" />
+                                    Verified
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50">
+                                    Unverified
+                                  </Badge>
+                                )}
+                             </div>
+
+                             {/* Payment Proof Image */}
+                             {order.paymentProof && (
+                               <div className="mt-3">
+                                 <p className="text-xs text-muted-foreground mb-2">Payment Receipt:</p>
+                                 <div className="flex items-start gap-3">
+                                   <div className="h-24 w-24 bg-muted rounded border overflow-hidden">
+                                     <a 
+                                      href={`${API_BASE_URL}${order.paymentProof}`} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="block h-full w-full"
+                                     >
+                                       <img 
+                                        src={`${API_BASE_URL}${order.paymentProof}`} 
+                                        alt="Payment Receipt" 
+                                        className="h-full w-full object-cover hover:opacity-80 transition-opacity"
+                                       />
+                                     </a>
+                                   </div>
+                                   {!order.isPaymentVerified && (
+                                     <Button 
+                                      size="sm" 
+                                      onClick={() => handleVerifyPayment(order._id)}
+                                      disabled={isVerifying}
+                                      className="mt-1"
+                                     >
+                                       {isVerifying ? (
+                                         <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                       ) : (
+                                         <CheckCircle className="h-3 w-3 mr-1" />
+                                       )}
+                                       Verify Payment
+                                     </Button>
+                                   )}
+                                 </div>
+                               </div>
+                             )}
+                          </div>
+
                           {/* Actions */}
                           {nextStatus && order.status !== 'cancelled' && (
-                            <div className="flex gap-2 pt-2">
+                            <div className="flex gap-2 pt-2 mt-2 border-t">
                               <Button
                                 size="sm"
                                 onClick={() => handleStatusUpdate(order._id, nextStatus)}

@@ -146,3 +146,19 @@ export async function deletePaymentQR(token: string): Promise<SettingsResponse> 
   });
   return response.json();
 }
+
+// Get public sellers info
+export async function getSellersInfo(
+  token: string,
+  sellerIds: string[]
+): Promise<{ success: boolean; sellers?: Array<{ _id: string; name: string; marketLocation: string; paymentQR?: string }> }> {
+  const response = await fetch(`${API_BASE_URL}/settings/sellers-info`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sellerIds }),
+  });
+  return response.json();
+}

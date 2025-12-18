@@ -21,6 +21,8 @@ export interface Order {
   statusHistory: { status: string; timestamp: string; note?: string }[];
   createdAt: string;
   updatedAt: string;
+  paymentProof?: string;
+  isPaymentVerified?: boolean;
 }
 
 export interface OrdersResponse {
@@ -35,16 +37,17 @@ export interface OrdersResponse {
 // Create order
 export async function createOrder(
   token: string,
-  items: { productId: string; quantity: number }[],
-  notes?: string
+  data: { items: { productId: string; quantity: number }[]; notes?: string } | FormData
 ): Promise<OrdersResponse> {
+  const isFormData = data instanceof FormData;
+  
   const response = await fetch(`${API_BASE_URL}/orders`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     },
-    body: JSON.stringify({ items, notes }),
+    body: isFormData ? data : JSON.stringify(data),
   });
   return response.json();
 }
@@ -94,6 +97,20 @@ export async function updateOrderStatus(
   return response.json();
 }
 
+// Verify payment
+export async function verifyPayment(
+  token: string,
+  orderId: string
+): Promise<OrdersResponse> {
+  const response = await fetch(`${API_BASE_URL}/orders/${orderId}/payment`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  return response.json();
+}
+
 // Get single order
 export async function getOrderById(
   token: string,
@@ -106,3 +123,4 @@ export async function getOrderById(
   });
   return response.json();
 }
+

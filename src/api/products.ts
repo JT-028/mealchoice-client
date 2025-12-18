@@ -28,6 +28,7 @@ export interface ProductFormData {
   marketLocation?: string;
   isAvailable?: boolean;
   lowStockThreshold?: number;
+  image?: string;
 }
 
 export interface ProductsResponse {
@@ -115,6 +116,25 @@ export async function deleteProduct(
     headers: {
       'Authorization': `Bearer ${token}`,
     },
+  });
+  return response.json();
+}
+
+// Upload product image
+export async function uploadProductImage(
+  token: string,
+  productId: string,
+  imageFile: File
+): Promise<ProductsResponse> {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+
+  const response = await fetch(`${API_BASE_URL}/products/${productId}/image`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
   });
   return response.json();
 }

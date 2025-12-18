@@ -215,8 +215,16 @@ export function ProductsPage() {
                   <TableRow key={product._id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                          <Package className="h-5 w-5 text-muted-foreground" />
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+                          {product.image ? (
+                            <img
+                              src={`http://localhost:5000${product.image}`}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-5 w-5 text-muted-foreground" />
+                          )}
                         </div>
                         <div>
                           <p className="font-medium">{product.name}</p>

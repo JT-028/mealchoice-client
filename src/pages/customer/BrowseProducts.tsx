@@ -149,11 +149,19 @@ export function BrowseProducts() {
                   const inCart = getItemQuantity(product._id) > 0;
                   
                   return (
-                    <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="h-32 bg-muted flex items-center justify-center">
-                        <ShoppingBag className="h-12 w-12 text-muted-foreground/50" />
+                    <Card key={product._id}>
+                      <div className="h-36 bg-muted flex items-center justify-center overflow-hidden">
+                        {product.image ? (
+                          <img
+                            src={`http://localhost:5000${product.image}`}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <ShoppingBag className="h-12 w-12 text-muted-foreground/50" />
+                        )}
                       </div>
-                      <CardContent className="p-4">
+                      <CardContent>
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h3 className="font-semibold line-clamp-1">{product.name}</h3>
                           <Badge variant="secondary" className="capitalize shrink-0">

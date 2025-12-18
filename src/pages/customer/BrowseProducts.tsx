@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,12 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAllProducts, PRODUCT_CATEGORIES, type Product } from '@/api/products';
+import { useCart } from '@/contexts/CartContext';
 import {
   Search,
   ShoppingBag,
   MapPin,
   Loader2,
-  Package
+  Package,
+  ShoppingCart,
+  Plus,
+  Check
 } from 'lucide-react';
 
 export function BrowseProducts() {
@@ -20,6 +25,8 @@ export function BrowseProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
+  
+  const { addItem, getItemQuantity, totalItems } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -49,13 +56,27 @@ export function BrowseProducts() {
     ...PRODUCT_CATEGORIES
   ];
 
+  const handleAddToCart = (product: Product) => {
+    addItem(product, 1);
+  };
+
   return (
     <CustomerLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Browse Products</h1>
-          <p className="text-muted-foreground">Fresh products from local Angeles City markets</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Browse Products</h1>
+            <p className="text-muted-foreground">Fresh products from local Angeles City markets</p>
+          </div>
+          {totalItems > 0 && (
+            <Button asChild>
+              <Link to="/customer/cart">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Cart ({totalItems})
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -124,49 +145,69 @@ export function BrowseProducts() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {products.map((product) => (
-                  <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="h-32 bg-muted flex items-center justify-center">
-                      <ShoppingBag className="h-12 w-12 text-muted-foreground/50" />
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold line-clamp-1">{product.name}</h3>
-                        <Badge variant="secondary" className="capitalize shrink-0">
-                          {product.category}
-                        </Badge>
+                {products.map((product) => {
+                  const inCart = getItemQuantity(product._id) > 0;
+                  
+                  return (
+                    <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="h-32 bg-muted flex items-center justify-center">
+                        <ShoppingBag className="h-12 w-12 text-muted-foreground/50" />
                       </div>
-                      
-                      {product.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {product.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-lg font-bold text-primary">
-                            ₱{product.price.toFixed(2)}
-                            <span className="text-sm font-normal text-muted-foreground">
-                              /{product.unit}
-                            </span>
-                          </p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {product.marketLocation}
-                          </p>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold line-clamp-1">{product.name}</h3>
+                          <Badge variant="secondary" className="capitalize shrink-0">
+                            {product.category}
+                          </Badge>
                         </div>
-                        <Button size="sm">Add</Button>
-                      </div>
+                        
+                        {product.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                            {product.description}
+                          </p>
+                        )}
 
-                      {typeof product.seller === 'object' && product.seller && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Sold by: {product.seller.name}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-lg font-bold text-primary">
+                              ₱{product.price.toFixed(2)}
+                              <span className="text-sm font-normal text-muted-foreground">
+                                /{product.unit}
+                              </span>
+                            </p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {product.marketLocation}
+                            </p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant={inCart ? 'secondary' : 'default'}
+                            onClick={() => handleAddToCart(product)}
+                          >
+                            {inCart ? (
+                              <>
+                                <Check className="h-4 w-4 mr-1" />
+                                Added
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add
+                              </>
+                            )}
+                          </Button>
+                        </div>
+
+                        {typeof product.seller === 'object' && product.seller && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Sold by: {product.seller.name}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>

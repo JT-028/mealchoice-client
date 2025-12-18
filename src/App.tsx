@@ -1,15 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import { LandingPage } from './pages/LandingPage';
-import { Dashboard } from './pages/Dashboard';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+
+// Seller pages
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { ProductsPage } from './pages/seller/ProductsPage';
+import { SellerOrdersPage } from './pages/seller/SellerOrdersPage';
+
+// Customer pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
 import { BrowseProducts } from './pages/customer/BrowseProducts';
 import { BudgetSettings } from './pages/customer/BudgetSettings';
+import { CartPage } from './pages/customer/CartPage';
+import { CheckoutPage } from './pages/customer/CheckoutPage';
+import { OrdersPage } from './pages/customer/OrdersPage';
 
 // Component to redirect users to their role-specific dashboard
 function DashboardRedirect() {
@@ -26,116 +34,140 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          
-          {/* Dashboard Redirect */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <DashboardRedirect />
-              </ProtectedRoute>
-            } 
-          />
+        <CartProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Dashboard Redirect */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardRedirect />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Customer Routes */}
-          <Route 
-            path="/customer" 
-            element={
-              <ProtectedRoute allowedRoles={['customer']}>
-                <CustomerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/customer/browse" 
-            element={
-              <ProtectedRoute allowedRoles={['customer']}>
-                <BrowseProducts />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/customer/meals" 
-            element={
-              <ProtectedRoute allowedRoles={['customer']}>
-                <div className="p-8 text-center text-muted-foreground">
-                  Meal Planner coming soon...
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/customer/budget" 
-            element={
-              <ProtectedRoute allowedRoles={['customer']}>
-                <BudgetSettings />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/customer/settings" 
-            element={
-              <ProtectedRoute allowedRoles={['customer']}>
-                <div className="p-8 text-center text-muted-foreground">
-                  Settings coming soon...
-                </div>
-              </ProtectedRoute>
-            } 
-          />
+            {/* Customer Routes */}
+            <Route 
+              path="/customer" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <CustomerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/browse" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <BrowseProducts />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/cart" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <CartPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/checkout" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/orders" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <OrdersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/meals" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <div className="p-8 text-center text-muted-foreground">
+                    Meal Planner coming soon...
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/budget" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <BudgetSettings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/settings" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <div className="p-8 text-center text-muted-foreground">
+                    Settings coming soon...
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Seller Routes */}
-          <Route 
-            path="/seller" 
-            element={
-              <ProtectedRoute allowedRoles={['seller']}>
-                <SellerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/seller/products" 
-            element={
-              <ProtectedRoute allowedRoles={['seller']}>
-                <ProductsPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/seller/orders" 
-            element={
-              <ProtectedRoute allowedRoles={['seller']}>
-                <div className="p-8 text-center text-muted-foreground">
-                  Orders page coming soon...
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/seller/messages" 
-            element={
-              <ProtectedRoute allowedRoles={['seller']}>
-                <div className="p-8 text-center text-muted-foreground">
-                  Messages page coming soon...
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/seller/settings" 
-            element={
-              <ProtectedRoute allowedRoles={['seller']}>
-                <div className="p-8 text-center text-muted-foreground">
-                  Settings page coming soon...
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
+            {/* Seller Routes */}
+            <Route 
+              path="/seller" 
+              element={
+                <ProtectedRoute allowedRoles={['seller']}>
+                  <SellerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/products" 
+              element={
+                <ProtectedRoute allowedRoles={['seller']}>
+                  <ProductsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/orders" 
+              element={
+                <ProtectedRoute allowedRoles={['seller']}>
+                  <SellerOrdersPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/messages" 
+              element={
+                <ProtectedRoute allowedRoles={['seller']}>
+                  <div className="p-8 text-center text-muted-foreground">
+                    Messages page coming soon...
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/seller/settings" 
+              element={
+                <ProtectedRoute allowedRoles={['seller']}>
+                  <div className="p-8 text-center text-muted-foreground">
+                    Settings page coming soon...
+                  </div>
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </CartProvider>
       </AuthProvider>
     </BrowserRouter>
   );

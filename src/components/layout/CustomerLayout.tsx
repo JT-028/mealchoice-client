@@ -5,7 +5,8 @@ import {
   UtensilsCrossed,
   LayoutDashboard,
   ShoppingBag,
-  Calendar,
+  ShoppingCart,
+  Package,
   Wallet,
   Settings,
   LogOut,
@@ -22,7 +23,8 @@ interface CustomerLayoutProps {
 const navItems = [
   { href: '/customer', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/customer/browse', label: 'Browse Products', icon: ShoppingBag },
-  { href: '/customer/meals', label: 'Meal Planner', icon: Calendar },
+  { href: '/customer/cart', label: 'Cart', icon: ShoppingCart },
+  { href: '/customer/orders', label: 'My Orders', icon: Package },
   { href: '/customer/budget', label: 'Budget', icon: Wallet },
   { href: '/customer/settings', label: 'Settings', icon: Settings },
 ];

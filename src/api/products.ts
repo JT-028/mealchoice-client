@@ -41,6 +41,29 @@ export interface ProductsResponse {
   product?: Product;
 }
 
+export interface Seller {
+  _id: string;
+  name: string;
+  email: string;
+  marketLocation: string | null;
+}
+
+export interface SellersResponse {
+  success: boolean;
+  message?: string;
+  sellers?: Seller[];
+}
+
+// Get verified sellers (for starting chat)
+export async function getVerifiedSellers(token: string): Promise<SellersResponse> {
+  const response = await fetch(`${API_BASE_URL}/products/sellers/list`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  return response.json();
+}
+
 // Get all products (public)
 export async function getAllProducts(filters?: {
   category?: string;

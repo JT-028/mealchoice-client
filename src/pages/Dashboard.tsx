@@ -1,16 +1,30 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   UtensilsCrossed, 
   Wallet, 
   Calendar, 
   ShoppingCart,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  LogOut,
+  User,
+  Store,
+  Settings
 } from 'lucide-react';
 
 export function Dashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -22,17 +36,51 @@ export function Dashboard() {
             </div>
             <span className="text-xl font-bold text-foreground">Meal Choice</span>
           </Link>
-          <Button variant="outline" asChild>
-            <Link to="/">Logout</Link>
-          </Button>
+          
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  {user.role === 'seller' ? (
+                    <Store className="h-4 w-4 text-primary" />
+                  ) : (
+                    <User className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-foreground">{user.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                </div>
+              </div>
+            )}
+            <Button variant="ghost" size="icon">
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
         </div>
       </header>
 
       {/* Dashboard Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back! 👋</h1>
-          <p className="text-muted-foreground">Here's your meal planning overview for today.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-foreground">
+              Welcome back, {user?.name?.split(' ')[0]}! 👋
+            </h1>
+            <Badge variant="secondary" className="capitalize">
+              {user?.role}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground">
+            {user?.role === 'seller' 
+              ? "Manage your orders and inventory from here."
+              : "Here's your meal planning overview for today."
+            }
+          </p>
         </div>
 
         {/* Stats Grid */}

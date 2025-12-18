@@ -7,6 +7,9 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { ProductsPage } from './pages/seller/ProductsPage';
+import { CustomerDashboard } from './pages/customer/CustomerDashboard';
+import { BrowseProducts } from './pages/customer/BrowseProducts';
+import { BudgetSettings } from './pages/customer/BudgetSettings';
 
 // Component to redirect users to their role-specific dashboard
 function DashboardRedirect() {
@@ -16,7 +19,7 @@ function DashboardRedirect() {
     return <Navigate to="/seller" replace />;
   }
   
-  return <Dashboard />;
+  return <Navigate to="/customer" replace />;
 }
 
 function App() {
@@ -29,12 +32,58 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Customer Dashboard */}
+          {/* Dashboard Redirect */}
           <Route 
             path="/dashboard" 
             element={
               <ProtectedRoute>
                 <DashboardRedirect />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Customer Routes */}
+          <Route 
+            path="/customer" 
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <CustomerDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/customer/browse" 
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <BrowseProducts />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/customer/meals" 
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <div className="p-8 text-center text-muted-foreground">
+                  Meal Planner coming soon...
+                </div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/customer/budget" 
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <BudgetSettings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/customer/settings" 
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <div className="p-8 text-center text-muted-foreground">
+                  Settings coming soon...
+                </div>
               </ProtectedRoute>
             } 
           />

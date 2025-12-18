@@ -1,0 +1,264 @@
+import { useEffect, useState } from 'react';
+import { CustomerLayout } from '@/components/layout/CustomerLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { getBudget, updateBudget, type Budget } from '@/api/budget';
+import {
+  Wallet,
+  Save,
+  Loader2,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
+
+export function BudgetSettings() {
+  const { token } = useAuth();
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const [formData, setFormData] = useState({
+    dailyLimit: 500,
+    weeklyLimit: 3000,
+    alertThreshold: 80,
+  });
+
+  useEffect(() => {
+    const fetchBudget = async () => {
+      if (!token) return;
+      
+      try {
+        const response = await getBudget(token);
+        if (response.success && response.budget) {
+          setBudget(response.budget);
+          setFormData({
+            dailyLimit: response.budget.dailyLimit,
+            weeklyLimit: response.budget.weeklyLimit,
+            alertThreshold: response.budget.alertThreshold,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching budget:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBudget();
+  }, [token]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
+
+    if (!token) return;
+
+    if (formData.dailyLimit <= 0) {
+      setError('Daily limit must be greater than 0');
+      return;
+    }
+
+    if (formData.weeklyLimit < formData.dailyLimit) {
+      setError('Weekly limit should be at least equal to daily limit');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const response = await updateBudget(token, formData);
+      if (response.success && response.budget) {
+        setBudget(response.budget);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        setError(response.message || 'Failed to update budget');
+      }
+    } catch (err) {
+      setError('Server error. Please try again.');
+      console.error('Budget update error:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Mock spending (will be real later)
+  const todaySpent = 185;
+  const weeklySpent = 1250;
+
+  return (
+    <CustomerLayout>
+      <div className="space-y-6 max-w-2xl">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Budget Settings</h1>
+          <p className="text-muted-foreground">Manage your daily and weekly spending limits</p>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Current Status */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Today's Spending</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₱{todaySpent}</div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${(todaySpent / formData.dailyLimit) * 100 > formData.alertThreshold ? 'bg-destructive' : 'bg-primary'}`}
+                        style={{ width: `${Math.min((todaySpent / formData.dailyLimit) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    ₱{formData.dailyLimit - todaySpent} remaining of ₱{formData.dailyLimit}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Weekly Spending</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₱{weeklySpent}</div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${(weeklySpent / formData.weeklyLimit) * 100 > formData.alertThreshold ? 'bg-destructive' : 'bg-primary'}`}
+                        style={{ width: `${Math.min((weeklySpent / formData.weeklyLimit) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    ₱{formData.weeklyLimit - weeklySpent} remaining of ₱{formData.weeklyLimit}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Settings Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-primary" />
+                  Budget Limits
+                </CardTitle>
+                <CardDescription>
+                  Set your spending limits to help stay on track with your food budget
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                      <AlertTriangle className="h-4 w-4" />
+                      {error}
+                    </div>
+                  )}
+
+                  {success && (
+                    <div className="flex items-center gap-2 p-3 text-sm text-green-600 bg-green-50 rounded-lg">
+                      <CheckCircle className="h-4 w-4" />
+                      Budget settings saved successfully!
+                    </div>
+                  )}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="dailyLimit">Daily Limit (₱)</Label>
+                      <Input
+                        id="dailyLimit"
+                        type="number"
+                        min="0"
+                        value={formData.dailyLimit}
+                        onChange={(e) => setFormData({ ...formData, dailyLimit: Number(e.target.value) })}
+                        disabled={saving}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Maximum you want to spend per day on food
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="weeklyLimit">Weekly Limit (₱)</Label>
+                      <Input
+                        id="weeklyLimit"
+                        type="number"
+                        min="0"
+                        value={formData.weeklyLimit}
+                        onChange={(e) => setFormData({ ...formData, weeklyLimit: Number(e.target.value) })}
+                        disabled={saving}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Maximum weekly food budget
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="alertThreshold">Alert Threshold (%)</Label>
+                    <Input
+                      id="alertThreshold"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.alertThreshold}
+                      onChange={(e) => setFormData({ ...formData, alertThreshold: Number(e.target.value) })}
+                      disabled={saving}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Get notified when you've spent this percentage of your budget
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={saving}>
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Settings
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Tips */}
+            <Card className="border-dashed">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">💡 Budget Tips</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-2">
+                <p>• Plan your meals ahead to avoid impulse buying</p>
+                <p>• Buy seasonal fruits and vegetables for better prices</p>
+                <p>• Check prices from different sellers before purchasing</p>
+                <p>• Set realistic limits based on your family size</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    </CustomerLayout>
+  );
+}

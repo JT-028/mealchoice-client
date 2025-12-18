@@ -12,6 +12,7 @@ import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { ProductsPage } from './pages/seller/ProductsPage';
 import { SellerOrdersPage } from './pages/seller/SellerOrdersPage';
 import { SellerMessagesPage } from './pages/seller/SellerMessagesPage';
+import { SellerSettingsPage } from './pages/seller/SellerSettingsPage';
 
 // Customer pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
@@ -21,6 +22,7 @@ import { CartPage } from './pages/customer/CartPage';
 import { CheckoutPage } from './pages/customer/CheckoutPage';
 import { OrdersPage } from './pages/customer/OrdersPage';
 import { CustomerMessagesPage } from './pages/customer/CustomerMessagesPage';
+import { CustomerSettingsPage } from './pages/customer/CustomerSettingsPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -171,9 +173,7 @@ function App() {
                 path="/customer/settings"
                 element={
                   <ProtectedRoute allowedRoles={['customer']}>
-                    <div className="p-8 text-center text-muted-foreground">
-                      Settings coming soon...
-                    </div>
+                    <CustomerSettingsPage />
                   </ProtectedRoute>
                 }
               />
@@ -215,9 +215,7 @@ function App() {
                 path="/seller/settings"
                 element={
                   <ProtectedRoute allowedRoles={['seller']}>
-                    <div className="p-8 text-center text-muted-foreground">
-                      Settings page coming soon...
-                    </div>
+                    <SellerSettingsPage />
                   </ProtectedRoute>
                 }
               />

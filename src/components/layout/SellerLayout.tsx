@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext';
 import {
   UtensilsCrossed,
   LayoutDashboard,
@@ -17,6 +19,7 @@ import { useState } from 'react';
 
 interface SellerLayoutProps {
   children: React.ReactNode;
+  noPadding?: boolean;
 }
 
 const navItems = [
@@ -27,8 +30,9 @@ const navItems = [
   { href: '/seller/settings', label: 'Settings', icon: Settings },
 ];
 
-export function SellerLayout({ children }: SellerLayoutProps) {
+export function SellerLayout({ children, noPadding = false }: SellerLayoutProps) {
   const { user, logout } = useAuth();
+  const { totalUnreadCount } = useChat();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -108,6 +112,9 @@ export function SellerLayout({ children }: SellerLayoutProps) {
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
               const Icon = item.icon;
+              const isMessages = item.href === '/seller/messages';
+              const showBadge = isMessages && totalUnreadCount > 0;
+
               return (
                 <Link
                   key={item.href}
@@ -123,7 +130,12 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium">{item.label}</span>
-                  {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
+                  {showBadge && (
+                    <Badge variant="default" className="ml-auto rounded-full h-5 min-w-5 flex items-center justify-center">
+                      {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                    </Badge>
+                  )}
+                  {isActive && !showBadge && <ChevronRight className="h-4 w-4 ml-auto" />}
                 </Link>
               );
             })}
@@ -145,7 +157,7 @@ export function SellerLayout({ children }: SellerLayoutProps) {
 
       {/* Main Content */}
       <main className="lg:pl-64">
-        <div className="p-4 lg:p-8">
+        <div className={noPadding ? '' : 'p-4 lg:p-8'}>
           {children}
         </div>
       </main>

@@ -29,7 +29,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllSellers, updateSeller, deleteSeller, type Seller } from '@/api/admin';
+import { getAllSellers, updateSeller, deleteSeller, createSeller, type Seller } from '@/api/admin';
 import {
   Users,
   Loader2,
@@ -38,7 +38,8 @@ import {
   Trash2,
   Check,
   X,
-  Search
+  Search,
+  Plus
 } from 'lucide-react';
 
 export function SellersPage() {
@@ -47,7 +48,7 @@ export function SellersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMarket, setFilterMarket] = useState<string>('all');
-  
+
   // Edit dialog
   const [editDialog, setEditDialog] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
@@ -63,15 +64,24 @@ export function SellersPage() {
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Create seller dialog
+  const [createDialog, setCreateDialog] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    marketLocation: ''
+  });
+  const [creating, setCreating] = useState(false);
+
   const fetchSellers = async () => {
     if (!token) return;
-    
+
     try {
       const filters: { market?: string } = {};
       if (filterMarket !== 'all') {
         filters.market = filterMarket;
       }
-      
+
       const response = await getAllSellers(token, filters);
       if (response.success && response.sellers) {
         setSellers(response.sellers);
@@ -137,6 +147,24 @@ export function SellersPage() {
     }
   };
 
+  const handleCreateSeller = async () => {
+    if (!token || !createForm.name || !createForm.email || !createForm.marketLocation) return;
+
+    setCreating(true);
+    try {
+      const response = await createSeller(token, createForm);
+      if (response.success) {
+        fetchSellers();
+        setCreateDialog(false);
+        setCreateForm({ name: '', email: '', marketLocation: '' });
+      }
+    } catch (error) {
+      console.error('Error creating seller:', error);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filteredSellers = sellers.filter(seller =>
     seller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     seller.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -153,9 +181,15 @@ export function SellersPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">All Sellers</h1>
-          <p className="text-muted-foreground">Manage seller accounts and information</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">All Sellers</h1>
+            <p className="text-muted-foreground">Manage seller accounts and information</p>
+          </div>
+          <Button onClick={() => setCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Seller
+          </Button>
         </div>
 
         {/* Filters */}
@@ -272,7 +306,7 @@ export function SellersPage() {
                 Update seller information
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
@@ -293,8 +327,8 @@ export function SellersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="market">Market Location</Label>
-                <Select 
-                  value={editForm.marketLocation} 
+                <Select
+                  value={editForm.marketLocation}
                   onValueChange={(value) => setEditForm({ ...editForm, marketLocation: value })}
                 >
                   <SelectTrigger>
@@ -346,6 +380,65 @@ export function SellersPage() {
               <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
                 {deleting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                 Delete Seller
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Seller Dialog */}
+        <Dialog open={createDialog} onOpenChange={setCreateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Seller</DialogTitle>
+              <DialogDescription>
+                Create a new seller account. They will receive an email with login credentials.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="newName">Name</Label>
+                <Input
+                  id="newName"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                  placeholder="Seller name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newEmail">Email</Label>
+                <Input
+                  id="newEmail"
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  placeholder="seller@email.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newMarket">Market Location</Label>
+                <Select
+                  value={createForm.marketLocation}
+                  onValueChange={(value) => setCreateForm({ ...createForm, marketLocation: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select market" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="San Nicolas Market">San Nicolas Market</SelectItem>
+                    <SelectItem value="Pampanga Market">Pampanga Market</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateSeller} disabled={creating || !createForm.name || !createForm.email || !createForm.marketLocation}>
+                {creating && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                Create Seller
               </Button>
             </DialogFooter>
           </DialogContent>

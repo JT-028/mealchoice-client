@@ -23,6 +23,7 @@ import { CheckoutPage } from './pages/customer/CheckoutPage';
 import { OrdersPage } from './pages/customer/OrdersPage';
 import { CustomerMessagesPage } from './pages/customer/CustomerMessagesPage';
 import { CustomerSettingsPage } from './pages/customer/CustomerSettingsPage';
+import { OnboardingPage } from './pages/customer/OnboardingPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -40,6 +41,11 @@ function DashboardRedirect() {
 
   if (user?.role === 'seller') {
     return <Navigate to="/seller" replace />;
+  }
+
+  // Check if customer needs onboarding
+  if (user?.role === 'customer' && !user.hasCompletedOnboarding) {
+    return <Navigate to="/customer/onboarding" replace />;
   }
 
   return <Navigate to="/customer" replace />;
@@ -105,6 +111,14 @@ function App() {
               />
 
               {/* Customer Routes */}
+              <Route
+                path="/customer/onboarding"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OnboardingPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/customer"
                 element={

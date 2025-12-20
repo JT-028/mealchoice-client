@@ -7,6 +7,7 @@ export interface User {
   role: 'customer' | 'seller' | 'admin';
   marketLocation?: string;
   isVerified?: boolean;
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface AuthResponse {
@@ -37,7 +38,7 @@ export async function registerUser(data: RegisterData): Promise<AuthResponse> {
     },
     body: JSON.stringify(data),
   });
-  
+
   return response.json();
 }
 
@@ -50,7 +51,7 @@ export async function loginUser(data: LoginData): Promise<AuthResponse> {
     },
     body: JSON.stringify(data),
   });
-  
+
   return response.json();
 }
 
@@ -63,6 +64,6 @@ export async function getProfile(token: string): Promise<AuthResponse> {
       'Content-Type': 'application/json',
     },
   });
-  
+
   return response.json();
 }

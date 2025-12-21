@@ -46,11 +46,18 @@ const cuisineOptions = ['Filipino', 'Asian', 'Western', 'Mediterranean', 'Indian
 
 export function OnboardingPage() {
     const navigate = useNavigate();
-    const { token, updateUser } = useAuth();
+    const { token, updateUser, user } = useAuth();
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const [countdown, setCountdown] = useState(5);
+
+    // Redirect if user has already completed onboarding
+    useEffect(() => {
+        if (user?.hasCompletedOnboarding) {
+            navigate('/customer', { replace: true });
+        }
+    }, [user, navigate]);
 
     // Auto-redirect after completion
     useEffect(() => {
@@ -473,9 +480,10 @@ export function OnboardingPage() {
                                                             <Input
                                                                 id="height"
                                                                 type="number"
+                                                                min={1}
                                                                 placeholder="170"
                                                                 value={health.height}
-                                                                onChange={(e) => setHealth({ ...health, height: e.target.value })}
+                                                                onChange={(e) => setHealth({ ...health, height: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
                                                         </div>
                                                         <div className="space-y-2">
@@ -483,9 +491,10 @@ export function OnboardingPage() {
                                                             <Input
                                                                 id="weight"
                                                                 type="number"
+                                                                min={1}
                                                                 placeholder="65"
                                                                 value={health.weight}
-                                                                onChange={(e) => setHealth({ ...health, weight: e.target.value })}
+                                                                onChange={(e) => setHealth({ ...health, weight: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
                                                         </div>
                                                         <div className="space-y-2">
@@ -493,9 +502,10 @@ export function OnboardingPage() {
                                                             <Input
                                                                 id="age"
                                                                 type="number"
+                                                                min={1}
                                                                 placeholder="25"
                                                                 value={health.age}
-                                                                onChange={(e) => setHealth({ ...health, age: e.target.value })}
+                                                                onChange={(e) => setHealth({ ...health, age: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
                                                         </div>
                                                     </div>
@@ -665,8 +675,9 @@ export function OnboardingPage() {
                                                                 <Input
                                                                     id="calorieMin"
                                                                     type="number"
+                                                                    min={0}
                                                                     value={meal.calorieMin}
-                                                                    onChange={(e) => setMeal({ ...meal, calorieMin: Number(e.target.value) })}
+                                                                    onChange={(e) => setMeal({ ...meal, calorieMin: Math.max(0, Number(e.target.value)) })}
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
@@ -684,8 +695,9 @@ export function OnboardingPage() {
                                                                 <Input
                                                                     id="calorieMax"
                                                                     type="number"
+                                                                    min={0}
                                                                     value={meal.calorieMax}
-                                                                    onChange={(e) => setMeal({ ...meal, calorieMax: Number(e.target.value) })}
+                                                                    onChange={(e) => setMeal({ ...meal, calorieMax: Math.max(0, Number(e.target.value)) })}
                                                                 />
                                                             </div>
                                                         </div>
@@ -705,8 +717,9 @@ export function OnboardingPage() {
                                                                 <Input
                                                                     id="maxSodium"
                                                                     type="number"
+                                                                    min={0}
                                                                     value={meal.maxSodium}
-                                                                    onChange={(e) => setMeal({ ...meal, maxSodium: Number(e.target.value) })}
+                                                                    onChange={(e) => setMeal({ ...meal, maxSodium: Math.max(0, Number(e.target.value)) })}
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
@@ -724,8 +737,9 @@ export function OnboardingPage() {
                                                                 <Input
                                                                     id="maxSugar"
                                                                     type="number"
+                                                                    min={0}
                                                                     value={meal.maxSugar}
-                                                                    onChange={(e) => setMeal({ ...meal, maxSugar: Number(e.target.value) })}
+                                                                    onChange={(e) => setMeal({ ...meal, maxSugar: Math.max(0, Number(e.target.value)) })}
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
@@ -743,8 +757,9 @@ export function OnboardingPage() {
                                                                 <Input
                                                                     id="maxFats"
                                                                     type="number"
+                                                                    min={0}
                                                                     value={meal.maxFats}
-                                                                    onChange={(e) => setMeal({ ...meal, maxFats: Number(e.target.value) })}
+                                                                    onChange={(e) => setMeal({ ...meal, maxFats: Math.max(0, Number(e.target.value)) })}
                                                                 />
                                                             </div>
                                                         </div>
@@ -809,9 +824,10 @@ export function OnboardingPage() {
                                                             <Input
                                                                 id="weeklyBudget"
                                                                 type="number"
+                                                                min={0}
                                                                 placeholder="2000"
                                                                 value={budget.weeklyBudget}
-                                                                onChange={(e) => setBudget({ ...budget, weeklyBudget: e.target.value })}
+                                                                onChange={(e) => setBudget({ ...budget, weeklyBudget: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
                                                             <p className="text-xs text-muted-foreground">
                                                                 How much do you plan to spend on food each week?
@@ -822,9 +838,10 @@ export function OnboardingPage() {
                                                             <Input
                                                                 id="budgetPerMeal"
                                                                 type="number"
+                                                                min={0}
                                                                 placeholder="100"
                                                                 value={budget.budgetPerMeal}
-                                                                onChange={(e) => setBudget({ ...budget, budgetPerMeal: e.target.value })}
+                                                                onChange={(e) => setBudget({ ...budget, budgetPerMeal: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
                                                             <p className="text-xs text-muted-foreground">
                                                                 Average amount you'd like to spend per meal.

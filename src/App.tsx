@@ -38,6 +38,9 @@ import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 function DashboardRedirect() {
   const { user } = useAuth();
 
+  console.log('[DashboardRedirect] Checking user:', user);
+  console.log('[DashboardRedirect] hasCompletedOnboarding:', user?.hasCompletedOnboarding);
+
   if (user?.role === 'admin') {
     return <Navigate to="/admin" replace />;
   }
@@ -47,10 +50,12 @@ function DashboardRedirect() {
   }
 
   // Check if customer needs onboarding
-  if (user?.role === 'customer' && !user.hasCompletedOnboarding) {
+  if (user?.role === 'customer' && user.hasCompletedOnboarding !== true) {
+    console.log('[DashboardRedirect] Redirecting to onboarding');
     return <Navigate to="/customer/onboarding" replace />;
   }
 
+  console.log('[DashboardRedirect] Redirecting to customer dashboard');
   return <Navigate to="/customer" replace />;
 }
 

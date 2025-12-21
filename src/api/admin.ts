@@ -54,6 +54,32 @@ export async function getPendingSellers(token: string): Promise<AdminResponse> {
   return response.json();
 }
 
+// Get pending customers
+export async function getPendingCustomers(token: string): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/pending`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Approve pending customer
+export async function approveCustomer(token: string, customerId: string): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}/approve`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Reject pending customer
+export async function rejectPendingCustomer(token: string, customerId: string): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}/reject`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
 // Get all sellers
 export async function getAllSellers(token: string, filters?: {
   verified?: boolean;
@@ -204,6 +230,87 @@ export async function createAdmin(
 export async function deleteAdmin(token: string, adminId: string): Promise<AdminsResponse> {
   const response = await fetch(`${API_BASE_URL}/admin/admins/${adminId}`, {
     method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Customer interface
+export interface Customer {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  hasCompletedOnboarding: boolean;
+  createdAt: string;
+  deactivatedAt?: string | null;
+}
+
+export interface CustomersResponse {
+  success: boolean;
+  message?: string;
+  customers?: Customer[];
+  customer?: Customer;
+  count?: number;
+}
+
+// Get all customers
+export async function getAllCustomers(token: string, filters?: {
+  active?: boolean;
+  search?: string;
+}): Promise<CustomersResponse> {
+  const params = new URLSearchParams();
+  if (filters?.active !== undefined) params.append('active', String(filters.active));
+  if (filters?.search) params.append('search', filters.search);
+
+  const url = `${API_BASE_URL}/admin/customers${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Update customer
+export async function updateCustomer(
+  token: string,
+  customerId: string,
+  data: Partial<{ name: string; email: string; isActive: boolean }>
+): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+}
+
+// Delete customer
+export async function deleteCustomer(token: string, customerId: string): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Deactivate customer
+export async function deactivateCustomer(token: string, customerId: string): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}/deactivate`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Activate customer
+export async function activateCustomer(token: string, customerId: string): Promise<CustomersResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}/activate`, {
+    method: 'PUT',
     headers: { 'Authorization': `Bearer ${token}` },
   });
   return response.json();

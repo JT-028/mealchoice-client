@@ -30,9 +30,10 @@ import AIMealPlannerPage from './pages/customer/AIMealPlannerPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { PendingSellersPage } from './pages/admin/PendingSellersPage';
+import { PendingAccountsPage } from './pages/admin/PendingAccountsPage';
 import { SellersPage } from './pages/admin/SellersPage';
 import { AdminsPage } from './pages/admin/AdminsPage';
+import { CustomersPage } from './pages/admin/CustomersPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 
 // Component to redirect users to their role-specific dashboard
@@ -96,7 +97,7 @@ function App() {
                 path="/admin/pending"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <PendingSellersPage />
+                    <PendingAccountsPage />
                   </ProtectedRoute>
                 }
               />
@@ -113,6 +114,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/customers"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <CustomersPage />
                   </ProtectedRoute>
                 }
               />

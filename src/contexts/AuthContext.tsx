@@ -74,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('ai_recommendations');
   };
 
   const updateUser = (updates: Partial<User>) => {

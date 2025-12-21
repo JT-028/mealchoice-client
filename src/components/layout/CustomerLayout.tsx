@@ -26,7 +26,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -38,6 +39,7 @@ interface CustomerLayoutProps {
 const navItems = [
   { href: '/customer', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/customer/browse', label: 'Browse Products', icon: ShoppingBag },
+  { href: '/customer/ai-recommendations', label: 'AI Recommendations', icon: Sparkles },
   { href: '/customer/cart', label: 'Cart', icon: ShoppingCart },
   { href: '/customer/orders', label: 'My Orders', icon: Package },
   { href: '/customer/messages', label: 'Messages', icon: MessageSquare },

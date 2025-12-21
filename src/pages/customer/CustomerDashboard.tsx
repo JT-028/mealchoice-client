@@ -13,7 +13,8 @@ import {
   TrendingUp,
   ArrowRight,
   Loader2,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Sparkles
 } from 'lucide-react';
 
 export function CustomerDashboard() {
@@ -171,18 +172,18 @@ export function CustomerDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow">
+              <Card className="hover:shadow-lg transition-shadow border-primary/20 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Wallet className="h-5 w-5 text-primary" />
-                    Manage Budget
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    AI Recommendations
                   </CardTitle>
-                  <CardDescription>Set your daily and weekly limits</CardDescription>
+                  <CardDescription>Personalized meal suggestions just for you</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="ghost" asChild className="p-0 h-auto">
-                    <Link to="/customer/budget">
-                      Settings <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button variant="default" asChild className="p-0 h-auto bg-transparent hover:bg-transparent text-primary hover:underline">
+                    <Link to="/customer/ai-recommendations" className="inline-flex items-center">
+                      Get Recommendations <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardContent>

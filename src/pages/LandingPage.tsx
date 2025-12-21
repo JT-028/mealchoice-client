@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import natureBg from '@/assets/nature-bg.png';
 import {
   UtensilsCrossed,
   Wallet,
@@ -31,13 +32,31 @@ export function LandingPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10" />
-        <div className="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
-
-        <div className="container relative mx-auto px-4 py-24 md:py-32">
+      <section className="relative overflow-hidden min-h-[70vh] flex items-center">
+        {/* Nature Background Image with refined visibility */}
+        <div 
+          className="absolute inset-0 z-0 scale-100 animate-subtle-zoom"
+          style={{
+            backgroundImage: `url(${natureBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 40%',
+            maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+            filter: 'blur(3px)',
+            opacity: 0.95
+          }}
+        />
+        
+        {/* Main Overlay - Adjusted for better visibility and readability */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-background/30 via-transparent to-background/50" />
+        
+        {/* Smooth Bottom Blend */}
+        <div className="absolute bottom-0 left-0 right-0 h-96 z-15 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        
+        {/* Safety buffer */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 z-15 bg-background" />
+        
+        <div className="container relative z-20 mx-auto px-4 py-24 md:py-32">
           <div className="max-w-4xl mx-auto text-center">
             <Badge className="mb-6" variant="secondary">
               <Sparkles className="h-3 w-3 mr-1" />
@@ -86,7 +105,7 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-muted/30">
+      <section id="features" className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <Badge className="mb-4" variant="outline">Features</Badge>

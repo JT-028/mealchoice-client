@@ -6,6 +6,8 @@ export interface Seller {
   email: string;
   role: string;
   marketLocation: string | null;
+  stallName: string | null;
+  stallNumber: string | null;
   isActive: boolean;
   isVerified: boolean;
   verifiedAt: string | null;
@@ -125,7 +127,7 @@ export async function rejectSeller(token: string, sellerId: string): Promise<Adm
 // Create new seller account
 export async function createSeller(
   token: string,
-  data: { name: string; email: string; marketLocation: string }
+  data: { name: string; email: string; marketLocation: string; stallName?: string; stallNumber?: string }
 ): Promise<AdminResponse> {
   const response = await fetch(`${API_BASE_URL}/admin/sellers`, {
     method: 'POST',
@@ -134,6 +136,75 @@ export async function createSeller(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
+  });
+  return response.json();
+}
+
+// Deactivate seller
+export async function deactivateSeller(token: string, sellerId: string): Promise<AdminResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/sellers/${sellerId}/deactivate`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Activate seller
+export async function activateSeller(token: string, sellerId: string): Promise<AdminResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/sellers/${sellerId}/activate`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Admin interface
+export interface Admin {
+  _id: string;
+  name: string;
+  email: string;
+  isMainAdmin: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AdminsResponse {
+  success: boolean;
+  message?: string;
+  admins?: Admin[];
+  admin?: Admin;
+  count?: number;
+}
+
+// Get all admins
+export async function getAdmins(token: string): Promise<AdminsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/admins`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Create sub-admin
+export async function createAdmin(
+  token: string,
+  data: { name: string; email: string; password: string }
+): Promise<AdminsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/admins`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+}
+
+// Delete sub-admin
+export async function deleteAdmin(token: string, adminId: string): Promise<AdminsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/admins/${adminId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
   });
   return response.json();
 }

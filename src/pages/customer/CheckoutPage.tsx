@@ -6,32 +6,59 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createOrder } from '@/api/orders';
 import { getSellersInfo } from '@/api/settings';
+import { getSavedAddresses, type Address } from '@/api/addresses';
 import {
   ShoppingBag,
   ArrowLeft,
   CheckCircle,
   Loader2,
   AlertTriangle,
-  QrCode
+  QrCode,
+  Banknote,
+  Store,
+  Truck,
+  MapPin,
+  Plus
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000';
+
+type PaymentMethod = 'qr' | 'cod';
+type DeliveryType = 'pickup' | 'delivery';
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { items, totalPrice, clearCart } = useCart();
   const { token } = useAuth();
-  
+
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [sellersInfo, setSellersInfo] = useState<Record<string, { paymentQR?: string }>>({});
   const [receipts, setReceipts] = useState<Record<string, File>>({});
+  const [paymentMethods, setPaymentMethods] = useState<Record<string, PaymentMethod>>({});
+  
+  // Delivery options
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    label: 'Home',
+    fullAddress: '',
+    barangay: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    contactPhone: '',
+    deliveryNotes: ''
+  });
 
   // Group items by seller
   const itemsBySeller = items.reduce((acc, item) => {
@@ -48,20 +75,37 @@ export function CheckoutPage() {
     return acc;
   }, {} as Record<string, { sellerName: string; marketLocation: string; items: typeof items; subtotal: number }>);
 
+  // Calculate seller IDs once for effect dependency
+  const sellerIds = Object.keys(itemsBySeller).sort().join(',');
+
   useEffect(() => {
     const fetchSellersInfo = async () => {
       if (!token) return;
-      const sellerIds = Object.keys(itemsBySeller);
-      if (sellerIds.length === 0) return;
+      const ids = sellerIds.split(',').filter(Boolean);
+      if (ids.length === 0) return;
 
       try {
-        const response = await getSellersInfo(token, sellerIds);
+        const response = await getSellersInfo(token, ids);
         if (response.success && response.sellers) {
           const infoMap: Record<string, { paymentQR?: string }> = {};
           response.sellers.forEach(s => {
             infoMap[s._id] = { paymentQR: s.paymentQR };
           });
           setSellersInfo(infoMap);
+
+          // Only set default payment methods if not already set
+          setPaymentMethods(prev => {
+            const updated = { ...prev };
+            if (response.sellers) {
+              response.sellers.forEach(s => {
+                if (!(s._id in updated)) {
+                  // Default to COD, user can switch to QR if available
+                  updated[s._id] = 'cod';
+                }
+              });
+            }
+            return updated;
+          });
         }
       } catch (err) {
         console.error('Failed to fetch sellers info:', err);
@@ -69,7 +113,30 @@ export function CheckoutPage() {
     };
 
     fetchSellersInfo();
-  }, [itemsBySeller, token]);
+  }, [sellerIds, token]);
+
+  // Fetch saved addresses when delivery is selected
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!token || deliveryType !== 'delivery') return;
+      
+      try {
+        const response = await getSavedAddresses(token);
+        if (response.success && response.addresses) {
+          setSavedAddresses(response.addresses);
+          // Auto-select default address
+          const defaultAddr = response.addresses.find(a => a.isDefault);
+          if (defaultAddr?._id) {
+            setSelectedAddressId(defaultAddr._id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch addresses:', err);
+      }
+    };
+
+    fetchAddresses();
+  }, [token, deliveryType]);
 
   const handleFileChange = (sellerId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -77,6 +144,21 @@ export function CheckoutPage() {
         ...prev,
         [sellerId]: e.target.files![0]
       }));
+    }
+  };
+
+  const handlePaymentMethodChange = (sellerId: string, method: PaymentMethod) => {
+    setPaymentMethods(prev => ({
+      ...prev,
+      [sellerId]: method
+    }));
+    // Clear receipt if switching to COD
+    if (method === 'cod') {
+      setReceipts(prev => {
+        const newReceipts = { ...prev };
+        delete newReceipts[sellerId];
+        return newReceipts;
+      });
     }
   };
 
@@ -98,7 +180,27 @@ export function CheckoutPage() {
       // Create FormData
       const formData = new FormData();
       formData.append('items', JSON.stringify(orderItems));
+      formData.append('paymentMethods', JSON.stringify(paymentMethods));
+      formData.append('deliveryType', deliveryType);
       if (notes) formData.append('notes', notes);
+      
+      // Add delivery address if delivery type is delivery
+      if (deliveryType === 'delivery') {
+        const addressToUse = selectedAddressId 
+          ? savedAddresses.find(a => a._id === selectedAddressId)
+          : newAddress;
+        if (addressToUse) {
+          formData.append('deliveryAddress', JSON.stringify({
+            fullAddress: addressToUse.fullAddress,
+            barangay: addressToUse.barangay,
+            city: addressToUse.city,
+            province: addressToUse.province,
+            postalCode: addressToUse.postalCode,
+            contactPhone: addressToUse.contactPhone || newAddress.contactPhone,
+            deliveryNotes: 'deliveryNotes' in addressToUse ? addressToUse.deliveryNotes : newAddress.deliveryNotes
+          }));
+        }
+      }
 
       // Append receipts with specific keys (proof_{sellerId})
       Object.entries(receipts).forEach(([sellerId, file]) => {
@@ -183,6 +285,7 @@ export function CheckoutPage() {
         {Object.entries(itemsBySeller).map(([sellerId, group]) => {
           const sellerInfo = sellersInfo[sellerId];
           const hasQR = sellerInfo?.paymentQR;
+          const selectedMethod = paymentMethods[sellerId] || 'cod';
 
           return (
             <Card key={sellerId}>
@@ -194,7 +297,7 @@ export function CheckoutPage() {
                   </div>
                   <p className="font-semibold text-primary">₱{group.subtotal.toFixed(2)}</p>
                 </div>
-                
+
                 <div className="space-y-2 mb-6">
                   {group.items.map((item) => (
                     <div key={item.productId} className="flex items-center justify-between text-sm">
@@ -208,55 +311,228 @@ export function CheckoutPage() {
                   ))}
                 </div>
 
-                {/* Payment QR Section */}
-                {hasQR && (
-                  <div className="mt-4 space-y-4">
-                    <div className="p-4 border rounded-lg bg-muted/20">
-                      <div className="flex items-start gap-4">
-                        <div className="h-32 w-32 bg-white p-2 rounded border flex-shrink-0">
-                          <img 
-                            src={`${API_BASE_URL}${sellerInfo.paymentQR}`} 
-                            alt="Payment QR"
-                            className="w-full h-full object-contain"
-                          />
+                {/* Payment Method Selection */}
+                <div className="border-t pt-4">
+                  <Label className="mb-3 block font-medium">Payment Method</Label>
+                  <RadioGroup
+                    value={selectedMethod}
+                    onValueChange={(value) => handlePaymentMethodChange(sellerId, value as PaymentMethod)}
+                    className="space-y-3"
+                  >
+                    {/* Cash on Delivery Option */}
+                    <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
+                      <RadioGroupItem value="cod" id={`cod-${sellerId}`} />
+                      <Label htmlFor={`cod-${sellerId}`} className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                          <Banknote className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 font-medium mb-1">
-                            <QrCode className="h-4 w-4" />
-                            <span>Scan to Pay</span>
+                          <p className="font-medium">Cash on Delivery</p>
+                          <p className="text-xs text-muted-foreground">Pay when you receive your order</p>
+                        </div>
+                      </Label>
+                    </div>
+
+                    {/* QR Payment Option */}
+                    {hasQR && (
+                      <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'qr' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
+                        <RadioGroupItem value="qr" id={`qr-${sellerId}`} />
+                        <Label htmlFor={`qr-${sellerId}`} className="flex items-center gap-3 cursor-pointer flex-1">
+                          <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <QrCode className="h-5 w-5 text-blue-600" />
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Please scan this QR code to make your payment before confirming.
-                          </p>
-                          <div className="text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded inline-block">
-                            Amount to Pay: ₱{group.subtotal.toFixed(2)}
+                          <div>
+                            <p className="font-medium">QR Code Payment</p>
+                            <p className="text-xs text-muted-foreground">Scan and pay via GCash/Maya</p>
+                          </div>
+                        </Label>
+                      </div>
+                    )}
+                  </RadioGroup>
+
+                  {/* QR Code and Upload Section - only show if QR is selected */}
+                  {hasQR && selectedMethod === 'qr' && (
+                    <div className="mt-4 space-y-4">
+                      <div className="p-4 border rounded-lg bg-muted/20">
+                        <div className="flex items-start gap-4">
+                          <div className="h-32 w-32 bg-white p-2 rounded border flex-shrink-0">
+                            <img
+                              src={`${API_BASE_URL}${sellerInfo.paymentQR}`}
+                              alt="Payment QR"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 font-medium mb-1">
+                              <QrCode className="h-4 w-4" />
+                              <span>Scan to Pay</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Please scan this QR code to make your payment before confirming.
+                            </p>
+                            <div className="text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded inline-block">
+                              Amount to Pay: ₱{group.subtotal.toFixed(2)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Receipt Upload */}
-                    <div>
-                      <Label htmlFor={`receipt-${sellerId}`} className="mb-2 block">Upload Payment Receipt</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id={`receipt-${sellerId}`}
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(sellerId, e)}
-                          className="cursor-pointer"
-                        />
+                      {/* Receipt Upload */}
+                      <div>
+                        <Label htmlFor={`receipt-${sellerId}`} className="mb-2 block">Upload Payment Receipt</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id={`receipt-${sellerId}`}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(sellerId, e)}
+                            className="cursor-pointer"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Upload a screenshot or photo of your payment confirmation.
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Upload a screenshot or photo of your payment confirmation.
-                      </p>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           );
         })}
+
+        {/* Delivery Options */}
+        <Card>
+          <CardContent className="pt-6">
+            <Label className="text-base font-semibold mb-4 block">How would you like to receive your order?</Label>
+            <RadioGroup value={deliveryType} onValueChange={(v) => setDeliveryType(v as DeliveryType)} className="space-y-3">
+              <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                <RadioGroupItem value="pickup" id="pickup" />
+                <Label htmlFor="pickup" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Store className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium">Self Pickup</p>
+                    <p className="text-sm text-muted-foreground">Pick up at the market stall</p>
+                  </div>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                <RadioGroupItem value="delivery" id="delivery" />
+                <Label htmlFor="delivery" className="flex items-center gap-2 cursor-pointer flex-1">
+                  <Truck className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">Home Delivery</p>
+                    <p className="text-sm text-muted-foreground">Seller will arrange delivery</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {/* Address Form for Delivery */}
+            {deliveryType === 'delivery' && (
+              <div className="mt-4 space-y-4 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <MapPin className="h-4 w-4" />
+                  Delivery Address
+                </div>
+                
+                {savedAddresses.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Saved Addresses</Label>
+                    {savedAddresses.map((addr) => (
+                      <div 
+                        key={addr._id} 
+                        className={`p-3 border rounded-lg cursor-pointer ${selectedAddressId === addr._id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                        onClick={() => { setSelectedAddressId(addr._id!); setShowNewAddressForm(false); }}
+                      >
+                        <p className="font-medium">{addr.label}</p>
+                        <p className="text-sm text-muted-foreground">{addr.fullAddress}</p>
+                      </div>
+                    ))}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="gap-1"
+                      onClick={() => { setSelectedAddressId(null); setShowNewAddressForm(true); }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Use a different address
+                    </Button>
+                  </div>
+                )}
+
+                {(savedAddresses.length === 0 || showNewAddressForm) && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="fullAddress">Complete Address *</Label>
+                      <Input
+                        id="fullAddress"
+                        placeholder="House #, Street, Building"
+                        value={newAddress.fullAddress}
+                        onChange={(e) => setNewAddress({ ...newAddress, fullAddress: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="barangay">Barangay</Label>
+                        <Input
+                          id="barangay"
+                          placeholder="Barangay"
+                          value={newAddress.barangay}
+                          onChange={(e) => setNewAddress({ ...newAddress, barangay: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="city">City/Municipality</Label>
+                        <Input
+                          id="city"
+                          placeholder="City"
+                          value={newAddress.city}
+                          onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="province">Province</Label>
+                        <Input
+                          id="province"
+                          placeholder="Province"
+                          value={newAddress.province}
+                          onChange={(e) => setNewAddress({ ...newAddress, province: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="contactPhone">Contact Phone *</Label>
+                        <Input
+                          id="contactPhone"
+                          placeholder="09XX XXX XXXX"
+                          value={newAddress.contactPhone}
+                          onChange={(e) => setNewAddress({ ...newAddress, contactPhone: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="deliveryNotes">Delivery Notes</Label>
+                      <Input
+                        id="deliveryNotes"
+                        placeholder="Landmarks, instructions for rider..."
+                        value={newAddress.deliveryNotes}
+                        onChange={(e) => setNewAddress({ ...newAddress, deliveryNotes: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Notes */}
         <Card>
@@ -298,7 +574,9 @@ export function CheckoutPage() {
             </Button>
 
             <p className="text-xs text-muted-foreground text-center mt-4">
-              By placing this order, you agree to pick up your items at the specified market location.
+              {deliveryType === 'delivery' 
+                ? 'The seller will contact you to arrange delivery.'
+                : 'Please pick up your items at the specified market location.'}
             </p>
           </CardContent>
         </Card>
@@ -306,4 +584,3 @@ export function CheckoutPage() {
     </CustomerLayout>
   );
 }
-

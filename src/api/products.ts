@@ -191,3 +191,36 @@ export const MARKET_LOCATIONS = [
   { value: 'San Nicolas Market', label: 'San Nicolas Market' },
   { value: 'Pampanga Market', label: 'Pampanga Market' },
 ];
+
+// Bulk delete products
+export async function bulkDeleteProducts(
+  token: string,
+  productIds: string[]
+): Promise<ProductsResponse & { count?: number }> {
+  const response = await fetch(`${API_BASE_URL}/products/bulk`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ productIds }),
+  });
+  return response.json();
+}
+
+// Bulk toggle availability
+export async function bulkToggleAvailability(
+  token: string,
+  productIds: string[],
+  isAvailable: boolean
+): Promise<ProductsResponse & { count?: number }> {
+  const response = await fetch(`${API_BASE_URL}/products/bulk-availability`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ productIds, isAvailable }),
+  });
+  return response.json();
+}

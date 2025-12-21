@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,42 @@ import { SellerLayout } from '@/components/layout/SellerLayout';
 import { PendingVerification } from '@/components/seller/PendingVerification';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSellerProducts, type Product } from '@/api/products';
+import { getSellerAnalytics, type SellerAnalytics } from '@/api/orders';
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line
+} from 'recharts';
 import {
   Package,
   AlertTriangle,
-  PackageX,
-  Plus,
   ArrowRight,
   ShoppingCart,
-  Loader2
+  Loader2,
+  TrendingUp,
+  TrendingDown,
+  Printer,
+  DollarSign,
+  Calendar,
+  XCircle
 } from 'lucide-react';
+
+const PERIOD_OPTIONS = [
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+  { value: 'year', label: 'This Year' },
+  { value: 'all', label: 'All Time' }
+];
+
+const PIE_COLORS = ['#22c55e', '#eab308', '#3b82f6', '#a855f7', '#06b6d4', '#ef4444'];
 
 export function SellerDashboard() {
   const { token, user } = useAuth();
@@ -26,6 +53,10 @@ export function SellerDashboard() {
     outOfStock: 0
   });
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<SellerAnalytics | null>(null);
+  const [period, setPeriod] = useState('month');
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -54,7 +85,139 @@ export function SellerDashboard() {
     fetchProducts();
   }, [token, user?.isVerified]);
 
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!token || !user?.isVerified) return;
+      
+      setAnalyticsLoading(true);
+      try {
+        const response = await getSellerAnalytics(token, { period });
+        if (response.success && response.analytics) {
+          setAnalytics(response.analytics);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [token, user?.isVerified, period]);
+
+  const handlePrint = () => {
+    const printContent = reportRef.current;
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Sales Analytics Report - ${user?.name || 'Seller'}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+          .header h1 { font-size: 24px; margin-bottom: 5px; }
+          .header p { color: #666; }
+          .period-badge { background: #f3f4f6; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-top: 10px; }
+          .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+          .stat-card { background: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; }
+          .stat-value { font-size: 28px; font-weight: bold; color: #111; }
+          .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+          .section { margin-bottom: 30px; }
+          .section h2 { font-size: 18px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+          th { background: #f9fafb; font-weight: 600; }
+          .text-right { text-align: right; }
+          .footer { margin-top: 40px; text-align: center; color: #999; font-size: 12px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Sales Analytics Report</h1>
+          <p>${user?.name || 'Seller'} - ${user?.marketLocation || 'Market'}</p>
+          <span class="period-badge">${PERIOD_OPTIONS.find(p => p.value === period)?.label || period}</span>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">₱${analytics?.summary.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 }) || '0.00'}</div>
+            <div class="stat-label">Total Revenue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${analytics?.summary.totalOrders || 0}</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${analytics?.summary.completedOrders || 0}</div>
+            <div class="stat-label">Completed Orders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">₱${analytics?.summary.averageOrderValue.toFixed(2) || '0.00'}</div>
+            <div class="stat-label">Avg. Order Value</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Order Status Breakdown</h2>
+          <table>
+            <tr><th>Status</th><th class="text-right">Count</th></tr>
+            <tr><td>Pending</td><td class="text-right">${analytics?.statusBreakdown.pending || 0}</td></tr>
+            <tr><td>Confirmed</td><td class="text-right">${analytics?.statusBreakdown.confirmed || 0}</td></tr>
+            <tr><td>Preparing</td><td class="text-right">${analytics?.statusBreakdown.preparing || 0}</td></tr>
+            <tr><td>Ready</td><td class="text-right">${analytics?.statusBreakdown.ready || 0}</td></tr>
+            <tr><td>Completed</td><td class="text-right">${analytics?.statusBreakdown.completed || 0}</td></tr>
+            <tr><td>Cancelled</td><td class="text-right">${analytics?.statusBreakdown.cancelled || 0}</td></tr>
+          </table>
+        </div>
+
+        <div class="section">
+          <h2>Payment Methods</h2>
+          <table>
+            <tr><th>Method</th><th class="text-right">Count</th></tr>
+            <tr><td>QR Payment</td><td class="text-right">${analytics?.paymentBreakdown.qr || 0}</td></tr>
+            <tr><td>Cash on Delivery</td><td class="text-right">${analytics?.paymentBreakdown.cod || 0}</td></tr>
+          </table>
+        </div>
+
+        <div class="section">
+          <h2>Top Selling Products</h2>
+          <table>
+            <tr><th>Product</th><th class="text-right">Qty Sold</th><th class="text-right">Revenue</th></tr>
+            ${analytics?.topProducts.map(p => `
+              <tr>
+                <td>${p.name}</td>
+                <td class="text-right">${p.quantity}</td>
+                <td class="text-right">₱${p.revenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+              </tr>
+            `).join('') || '<tr><td colspan="3" style="text-align:center;color:#999;">No data</td></tr>'}
+          </table>
+        </div>
+
+        <div class="footer">
+          <p>Generated on ${new Date().toLocaleString('en-PH')}</p>
+          <p>MealChoice Analytics Report</p>
+        </div>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   const lowStockProducts = products.filter(p => p.quantity > 0 && p.quantity <= p.lowStockThreshold);
+  const outOfStockProducts = products.filter(p => p.quantity === 0);
 
   // Show pending verification message for unverified sellers
   if (!user?.isVerified) {
@@ -65,78 +228,247 @@ export function SellerDashboard() {
     );
   }
 
+  // Prepare chart data
+  const statusChartData = analytics ? [
+    { name: 'Pending', value: analytics.statusBreakdown.pending },
+    { name: 'Confirmed', value: analytics.statusBreakdown.confirmed },
+    { name: 'Preparing', value: analytics.statusBreakdown.preparing },
+    { name: 'Ready', value: analytics.statusBreakdown.ready },
+    { name: 'Completed', value: analytics.statusBreakdown.completed },
+    { name: 'Cancelled', value: analytics.statusBreakdown.cancelled }
+  ].filter(d => d.value > 0) : [];
+
+  const salesChartData = analytics?.salesOverTime.map(d => ({
+    date: new Date(d.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }),
+    revenue: d.revenue,
+    orders: d.orders
+  })) || [];
+
   return (
     <SellerLayout>
-      <div className="space-y-8">
+      <div className="space-y-8" ref={reportRef}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Seller Dashboard</h1>
-            <p className="text-muted-foreground">Manage your products and orders</p>
+            <p className="text-muted-foreground">Manage your products and track sales</p>
           </div>
-          <Button asChild>
-            <Link to="/seller/products">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Link>
-          </Button>
+          <div>
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-2" />
+              Print Report
+            </Button>
+          </div>
+        </div>
+
+        {/* Period Selector */}
+        <div className="flex flex-wrap gap-2">
+          {PERIOD_OPTIONS.map(opt => (
+            <Button
+              key={opt.value}
+              variant={period === opt.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setPeriod(opt.value)}
+            >
+              <Calendar className="h-3 w-3 mr-1" />
+              {opt.label}
+            </Button>
+          ))}
         </div>
 
         {/* Stats Grid */}
-        {loading ? (
+        {loading || analyticsLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <>
+            {/* Revenue & Order Stats */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    ₱{analytics?.summary.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 }) || '0.00'}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs">
+                    {analytics?.summary.revenueChange !== 0 && (
+                      <>
+                        {analytics?.summary.revenueChange > 0 ? (
+                          <TrendingUp className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className={analytics?.summary.revenueChange > 0 ? 'text-green-600' : 'text-red-600'}>
+                          {Math.abs(analytics?.summary.revenueChange || 0)}% vs last period
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics?.summary.totalOrders || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analytics?.summary.completedOrders || 0} completed
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Avg. Order Value</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    ₱{analytics?.summary.averageOrderValue.toFixed(2) || '0.00'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Per completed order</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Products</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.total}</div>
-                  <p className="text-xs text-muted-foreground">Products in your inventory</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{stats.lowStock}</div>
-                  <p className="text-xs text-muted-foreground">Products need restocking</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
-                  <PackageX className="h-4 w-4 text-destructive" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-destructive">{stats.outOfStock}</div>
-                  <p className="text-xs text-muted-foreground">Products unavailable</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Today's Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">Orders to fulfill</p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.lowStock > 0 && <span className="text-yellow-600">{stats.lowStock} low stock</span>}
+                    {stats.lowStock > 0 && stats.outOfStock > 0 && ' · '}
+                    {stats.outOfStock > 0 && <span className="text-red-600">{stats.outOfStock} out</span>}
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Quick Actions */}
+            {/* Charts Row */}
             <div className="grid gap-4 md:grid-cols-2">
+              {/* Sales Over Time */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Sales Trend
+                  </CardTitle>
+                  <CardDescription>Revenue over the last 14 days</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {salesChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={salesChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
+                        <Tooltip
+                          formatter={(value: number) => [`₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 'Revenue']}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="#22c55e"
+                          strokeWidth={2}
+                          dot={{ fill: '#22c55e', strokeWidth: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                      No sales data for this period
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Order Status Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                    Order Status
+                  </CardTitle>
+                  <CardDescription>Distribution of order statuses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {statusChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={statusChartData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
+                        >
+                          {statusChartData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                      No orders for this period
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Products & Low Stock */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Top Products */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Top Selling Products
+                  </CardTitle>
+                  <CardDescription>Best performers by revenue</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {analytics?.topProducts && analytics.topProducts.length > 0 ? (
+                    <div className="space-y-3">
+                      {analytics.topProducts.map((product, idx) => (
+                        <div key={idx} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
+                              {idx + 1}
+                            </Badge>
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-sm text-muted-foreground">{product.quantity} sold</p>
+                            </div>
+                          </div>
+                          <span className="font-medium text-green-600">
+                            ₱{product.revenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No sales data for this period
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Low Stock Alert */}
               <Card>
                 <CardHeader>
@@ -179,49 +511,43 @@ export function SellerDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Recent Products */}
+              {/* Out of Stock Alert */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
-                    Recent Products
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    Out of Stock
                   </CardTitle>
-                  <CardDescription>Your latest product additions</CardDescription>
+                  <CardDescription>Products that need restocking</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {products.length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground mb-4">
-                        No products yet. Add your first product!
-                      </p>
-                      <Button asChild size="sm">
-                        <Link to="/seller/products">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Product
-                        </Link>
-                      </Button>
-                    </div>
+                  {outOfStockProducts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">
+                      ✅ No products are out of stock!
+                    </p>
                   ) : (
                     <div className="space-y-3">
-                      {products.slice(0, 5).map((product) => (
+                      {outOfStockProducts.slice(0, 5).map((product) => (
                         <div key={product._id} className="flex items-center justify-between">
                           <div>
                             <p className="font-medium">{product.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              ₱{product.price.toFixed(2)} / {product.unit}
+                              {product.category}
                             </p>
                           </div>
-                          <Badge variant="secondary" className="capitalize">
-                            {product.category}
+                          <Badge variant="destructive">
+                            Out of Stock
                           </Badge>
                         </div>
                       ))}
-                      <Button variant="ghost" asChild className="w-full">
-                        <Link to="/seller/products">
-                          View all products
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </Link>
-                      </Button>
+                      {outOfStockProducts.length > 5 && (
+                        <Button variant="ghost" asChild className="w-full">
+                          <Link to="/seller/inventory">
+                            View all {outOfStockProducts.length} items
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>

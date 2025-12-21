@@ -34,6 +34,7 @@ export function ChatWindow({
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const otherPerson = user?.role === 'customer' ? conversation.seller : conversation.customer;
+    const otherPersonName = otherPerson?.name || 'Unknown User';
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -84,8 +85,8 @@ export function ChatWindow({
                     <User className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h2 className="font-semibold text-base truncate">{otherPerson.name}</h2>
-                    {user?.role === 'customer' && conversation.seller.marketLocation && (
+                    <h2 className="font-semibold text-base truncate">{otherPersonName}</h2>
+                    {user?.role === 'customer' && conversation.seller?.marketLocation && (
                         <p className="text-sm text-muted-foreground truncate">
                             {conversation.seller.marketLocation}
                         </p>
@@ -135,7 +136,7 @@ export function ChatWindow({
                             <span className="animate-bounce" style={{ animationDelay: '150ms' }}>•</span>
                             <span className="animate-bounce" style={{ animationDelay: '300ms' }}>•</span>
                         </div>
-                        <span>{otherPerson.name} is typing...</span>
+                        <span>{otherPersonName} is typing...</span>
                     </div>
                 )}
 
@@ -147,7 +148,7 @@ export function ChatWindow({
                 onSend={onSendMessage}
                 onTyping={onTyping}
                 onStopTyping={onStopTyping}
-                placeholder={`Message ${otherPerson.name}...`}
+                placeholder={`Message ${otherPersonName}...`}
             />
         </div>
     );

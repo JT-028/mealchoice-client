@@ -14,7 +14,9 @@ import {
   updateSellerSettings,
   uploadPaymentQR,
   deletePaymentQR,
-  type UserSettings
+  type UserSettings,
+  type OperatingHours,
+  type DayHours
 } from '@/api/settings';
 import {
   User,
@@ -26,10 +28,23 @@ import {
   Check,
   Upload,
   Trash2,
-  Clock
+  Clock,
+  MapPin
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000';
+
+const DAYS_OF_WEEK = [
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
+] as const;
+
+const DEFAULT_HOURS: DayHours = { open: '06:00', close: '18:00', isClosed: false };
 
 export function SellerSettingsPage() {
   const { token } = useAuth();
@@ -43,8 +58,15 @@ export function SellerSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [storeOpen, setStoreOpen] = useState('06:00');
-  const [storeClose, setStoreClose] = useState('18:00');
+  const [operatingHours, setOperatingHours] = useState<OperatingHours>({
+    monday: { ...DEFAULT_HOURS },
+    tuesday: { ...DEFAULT_HOURS },
+    wednesday: { ...DEFAULT_HOURS },
+    thursday: { ...DEFAULT_HOURS },
+    friday: { ...DEFAULT_HOURS },
+    saturday: { ...DEFAULT_HOURS },
+    sunday: { ...DEFAULT_HOURS, isClosed: true },
+  });
   const [notifyNewOrders, setNotifyNewOrders] = useState(true);
   const [notifyLowStock, setNotifyLowStock] = useState(true);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
@@ -64,8 +86,9 @@ export function SellerSettingsPage() {
           setSettings(s);
           setName(s.name);
           setPhone(s.phone || '');
-          setStoreOpen(s.storeHours?.open || '06:00');
-          setStoreClose(s.storeHours?.close || '18:00');
+          if (s.operatingHours) {
+            setOperatingHours(s.operatingHours);
+          }
           setNotifyNewOrders(s.notifyNewOrders ?? true);
           setNotifyLowStock(s.notifyLowStock ?? true);
           if (s.paymentQR) {
@@ -131,20 +154,28 @@ export function SellerSettingsPage() {
     }
   };
 
-  const handleUpdateStoreSettings = async () => {
+  const handleDayHoursChange = (day: keyof OperatingHours, field: keyof DayHours, value: string | boolean) => {
+    setOperatingHours(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleUpdateOperatingHours = async () => {
     if (!token) return;
     setSaving(true);
     try {
-      const response = await updateSellerSettings(token, {
-        storeHours: { open: storeOpen, close: storeClose }
-      });
+      const response = await updateSellerSettings(token, { operatingHours });
       if (response.success) {
-        showMessage('success', 'Store hours updated');
+        showMessage('success', 'Operating hours updated');
       } else {
         showMessage('error', response.message || 'Failed to update');
       }
     } catch {
-      showMessage('error', 'Error updating store settings');
+      showMessage('error', 'Error updating operating hours');
     } finally {
       setSaving(false);
     }
@@ -170,7 +201,6 @@ export function SellerSettingsPage() {
     const file = e.target.files?.[0];
     if (!file || !token) return;
 
-    // Validate file
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       showMessage('error', 'Please select a valid image file');
@@ -278,11 +308,6 @@ export function SellerSettingsPage() {
                   <Label>Email</Label>
                   <Input value={settings?.email || ''} disabled />
                 </div>
-                <div className="space-y-2">
-                  <Label>Market Location</Label>
-                  <Input value={settings?.marketLocation || 'Not set'} disabled />
-                  <p className="text-xs text-muted-foreground">Contact admin to change location</p>
-                </div>
                 <Button onClick={handleUpdateProfile} disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
                   Save Changes
@@ -334,35 +359,78 @@ export function SellerSettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* Store Tab */}
-          <TabsContent value="store">
+          {/* Store Tab - Operating Hours & Location */}
+          <TabsContent value="store" className="space-y-6">
+            {/* Location Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Store Hours</CardTitle>
-                <CardDescription>Set your operating hours</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Store Location
+                </CardTitle>
+                <CardDescription>Your assigned market location</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="storeOpen">Opening Time</Label>
-                    <Input
-                      id="storeOpen"
-                      type="time"
-                      value={storeOpen}
-                      onChange={(e) => setStoreOpen(e.target.value)}
-                    />
+                    <Label>Market Location</Label>
+                    <Input value={settings?.marketLocation || 'Not assigned'} disabled />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="storeClose">Closing Time</Label>
-                    <Input
-                      id="storeClose"
-                      type="time"
-                      value={storeClose}
-                      onChange={(e) => setStoreClose(e.target.value)}
-                    />
+                    <Label>Stall Name</Label>
+                    <Input value={settings?.stallName || 'Not set'} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Stall Number</Label>
+                    <Input value={settings?.stallNumber || 'Not set'} disabled />
                   </div>
                 </div>
-                <Button onClick={handleUpdateStoreSettings} disabled={saving}>
+                <p className="text-xs text-muted-foreground">Contact admin to update location information</p>
+              </CardContent>
+            </Card>
+
+            {/* Operating Hours */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Operating Hours
+                </CardTitle>
+                <CardDescription>Set your store hours for each day of the week</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {DAYS_OF_WEEK.map(({ key, label }) => (
+                  <div key={key} className="flex items-center gap-4 py-2 border-b last:border-0">
+                    <div className="w-28 font-medium">{label}</div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={!operatingHours[key].isClosed}
+                        onCheckedChange={(checked) => handleDayHoursChange(key, 'isClosed', !checked)}
+                      />
+                      <span className="text-sm text-muted-foreground w-12">
+                        {operatingHours[key].isClosed ? 'Closed' : 'Open'}
+                      </span>
+                    </div>
+                    {!operatingHours[key].isClosed && (
+                      <div className="flex items-center gap-2 flex-1">
+                        <Input
+                          type="time"
+                          value={operatingHours[key].open}
+                          onChange={(e) => handleDayHoursChange(key, 'open', e.target.value)}
+                          className="w-32"
+                        />
+                        <span className="text-muted-foreground">to</span>
+                        <Input
+                          type="time"
+                          value={operatingHours[key].close}
+                          onChange={(e) => handleDayHoursChange(key, 'close', e.target.value)}
+                          className="w-32"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <Button onClick={handleUpdateOperatingHours} disabled={saving} className="mt-4">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
                   Save Hours
                 </Button>

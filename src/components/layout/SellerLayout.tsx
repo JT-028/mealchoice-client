@@ -13,7 +13,8 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Warehouse
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/seller', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/seller/products', label: 'Products', icon: Package },
   { href: '/seller/orders', label: 'Orders', icon: ShoppingCart },
+  { href: '/seller/inventory', label: 'Inventory', icon: Warehouse },
   { href: '/seller/messages', label: 'Messages', icon: MessageCircle },
   { href: '/seller/settings', label: 'Settings', icon: Settings },
 ];

@@ -10,7 +10,8 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/pending', label: 'Pending Sellers', icon: UserCheck },
   { href: '/admin/sellers', label: 'All Sellers', icon: Users },
+  { href: '/admin/admins', label: 'Admins', icon: Shield },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

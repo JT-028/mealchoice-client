@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { SellerLayout } from '@/components/layout/SellerLayout';
 import { PendingVerification } from '@/components/seller/PendingVerification';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -33,6 +34,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   getSellerProducts,
   deleteProduct,
+  bulkDeleteProducts,
+  bulkToggleAvailability,
   type Product,
 } from '@/api/products';
 import { ProductForm } from '@/components/seller/ProductForm';
@@ -43,16 +46,18 @@ import {
   Trash2,
   Loader2,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export function ProductsPage() {
   const { token, user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Dialog states
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -60,17 +65,21 @@ export function ProductsPage() {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Bulk action states
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+
   const fetchProducts = async () => {
     if (!token || !user?.isVerified) {
       setLoading(false);
       return;
     }
-    
+
     try {
       const response = await getSellerProducts(token);
       if (response.success && response.products) {
         setProducts(response.products);
-        setFilteredProducts(response.products);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -84,17 +93,20 @@ export function ProductsPage() {
   }, [token, user?.isVerified]);
 
   // Filter products based on search
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredProducts(filtered);
+      return products;
     }
+    return products.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   }, [searchQuery, products]);
+
+  // Get selected products info
+  const selectedProductsList = useMemo(() => {
+    return filteredProducts.filter(p => selectedProducts.has(p._id));
+  }, [filteredProducts, selectedProducts]);
 
   const handleAddClick = () => {
     setEditingProduct(null);
@@ -133,6 +145,62 @@ export function ProductsPage() {
     setFormOpen(false);
     setEditingProduct(null);
     fetchProducts();
+  };
+
+  // Bulk action handlers
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts(prev => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.size === filteredProducts.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filteredProducts.map(p => p._id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!token || selectedProducts.size === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const response = await bulkDeleteProducts(token, Array.from(selectedProducts));
+      if (response.success) {
+        setSelectedProducts(new Set());
+        setBulkDeleteDialogOpen(false);
+        fetchProducts();
+      }
+    } catch (error) {
+      console.error('Error bulk deleting:', error);
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const handleBulkToggleAvailability = async (isAvailable: boolean) => {
+    if (!token || selectedProducts.size === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const response = await bulkToggleAvailability(token, Array.from(selectedProducts), isAvailable);
+      if (response.success) {
+        setSelectedProducts(new Set());
+        fetchProducts();
+      }
+    } catch (error) {
+      console.error('Error bulk toggling availability:', error);
+    } finally {
+      setBulkProcessing(false);
+    }
   };
 
   const getStockBadge = (product: Product) => {
@@ -178,7 +246,80 @@ export function ProductsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
         </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedProducts.size > 0 && (
+          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+            <Checkbox
+              checked={selectedProducts.size === filteredProducts.length}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="text-sm font-medium">
+              {selectedProducts.size} product{selectedProducts.size > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex-1" />
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkToggleAvailability(true)}
+              disabled={bulkProcessing}
+              className="gap-1"
+            >
+              {bulkProcessing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Eye className="h-3 w-3" />
+              )}
+              Enable
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkToggleAvailability(false)}
+              disabled={bulkProcessing}
+              className="gap-1"
+            >
+              {bulkProcessing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <EyeOff className="h-3 w-3" />
+              )}
+              Disable
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setBulkDeleteDialogOpen(true)}
+              disabled={bulkProcessing}
+              className="gap-1 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedProducts(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
 
         {/* Products Table */}
         {loading ? (
@@ -202,17 +343,30 @@ export function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedProducts.size === filteredProducts.length && filteredProducts.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Available</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
-                  <TableRow key={product._id}>
+                  <TableRow key={product._id} className={selectedProducts.has(product._id) ? 'bg-muted/50' : ''}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedProducts.has(product._id)}
+                        onCheckedChange={() => toggleProductSelection(product._id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
@@ -254,6 +408,19 @@ export function ProductsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{getStockBadge(product)}</TableCell>
+                    <TableCell>
+                      {product.isAvailable ? (
+                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Visible
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-gray-500 border-gray-200 bg-gray-50">
+                          <EyeOff className="h-3 w-3 mr-1" />
+                          Hidden
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button
@@ -301,7 +468,7 @@ export function ProductsPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Single Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -324,6 +491,36 @@ export function ProductsPage() {
                   </>
                 ) : (
                   'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {selectedProducts.size} Product{selectedProducts.size > 1 ? 's' : ''}</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {selectedProducts.size} selected product{selectedProducts.size > 1 ? 's' : ''}?
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={bulkProcessing}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                disabled={bulkProcessing}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {bulkProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  `Delete ${selectedProducts.size} Product${selectedProducts.size > 1 ? 's' : ''}`
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -13,6 +13,7 @@ import { ProductsPage } from './pages/seller/ProductsPage';
 import { SellerOrdersPage } from './pages/seller/SellerOrdersPage';
 import { SellerMessagesPage } from './pages/seller/SellerMessagesPage';
 import { SellerSettingsPage } from './pages/seller/SellerSettingsPage';
+import { InventoryPage } from './pages/seller/InventoryPage';
 
 // Customer pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
@@ -29,6 +30,7 @@ import { OnboardingPage } from './pages/customer/OnboardingPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { PendingSellersPage } from './pages/admin/PendingSellersPage';
 import { SellersPage } from './pages/admin/SellersPage';
+import { AdminsPage } from './pages/admin/AdminsPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 
 // Component to redirect users to their role-specific dashboard
@@ -96,6 +98,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <SellersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/admins"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminsPage />
                   </ProtectedRoute>
                 }
               />
@@ -224,6 +234,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['seller']}>
                     <SellerMessagesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/seller/inventory"
+                element={
+                  <ProtectedRoute allowedRoles={['seller']}>
+                    <InventoryPage />
                   </ProtectedRoute>
                 }
               />

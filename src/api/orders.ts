@@ -9,13 +9,24 @@ export interface OrderItem {
   image?: string;
 }
 
+export interface DeliveryAddress {
+  fullAddress?: string;
+  barangay?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  contactPhone?: string;
+  deliveryNotes?: string;
+}
+
 export interface Order {
   _id: string;
   buyer: { _id: string; name: string; email?: string };
-  seller: { _id: string; name: string };
+  seller: { _id: string; name: string; stallName?: string; stallNumber?: string };
   items: OrderItem[];
   total: number;
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  paymentMethod?: 'qr' | 'cod';
   marketLocation: string;
   notes?: string;
   statusHistory: { status: string; timestamp: string; note?: string }[];
@@ -23,6 +34,9 @@ export interface Order {
   updatedAt: string;
   paymentProof?: string;
   isPaymentVerified?: boolean;
+  isArchived?: boolean;
+  deliveryType: 'pickup' | 'delivery';
+  deliveryAddress?: DeliveryAddress;
 }
 
 export interface OrdersResponse {
@@ -40,7 +54,7 @@ export async function createOrder(
   data: { items: { productId: string; quantity: number }[]; notes?: string } | FormData
 ): Promise<OrdersResponse> {
   const isFormData = data instanceof FormData;
-  
+
   const response = await fetch(`${API_BASE_URL}/orders`, {
     method: 'POST',
     headers: {
@@ -65,12 +79,18 @@ export async function getMyOrders(token: string): Promise<OrdersResponse> {
 // Get seller's orders
 export async function getSellerOrders(
   token: string,
-  status?: string
+  status?: string,
+  archived?: boolean
 ): Promise<OrdersResponse> {
-  const url = status && status !== 'all'
-    ? `${API_BASE_URL}/orders/seller?status=${status}`
+  const params = new URLSearchParams();
+  if (status && status !== 'all') params.append('status', status);
+  if (archived !== undefined) params.append('archived', String(archived));
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `${API_BASE_URL}/orders/seller?${queryString}`
     : `${API_BASE_URL}/orders/seller`;
-    
+
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -124,3 +144,94 @@ export async function getOrderById(
   return response.json();
 }
 
+// Archive/unarchive order
+export async function archiveOrder(
+  token: string,
+  orderId: string,
+  archive: boolean = true
+): Promise<OrdersResponse> {
+  const response = await fetch(`${API_BASE_URL}/orders/${orderId}/archive`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ archive }),
+  });
+  return response.json();
+}
+
+// Bulk archive/unarchive orders
+export async function bulkArchiveOrders(
+  token: string,
+  orderIds: string[],
+  archive: boolean = true
+): Promise<OrdersResponse & { count?: number }> {
+  const response = await fetch(`${API_BASE_URL}/orders/bulk-archive`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ orderIds, archive }),
+  });
+  return response.json();
+}
+
+// Seller Analytics
+export interface SellerAnalytics {
+  summary: {
+    totalRevenue: number;
+    totalOrders: number;
+    completedOrders: number;
+    pendingOrders: number;
+    cancelledOrders: number;
+    averageOrderValue: number;
+    revenueChange: number;
+  };
+  paymentBreakdown: {
+    qr: number;
+    cod: number;
+  };
+  statusBreakdown: {
+    pending: number;
+    confirmed: number;
+    preparing: number;
+    ready: number;
+    completed: number;
+    cancelled: number;
+  };
+  topProducts: Array<{
+    name: string;
+    quantity: number;
+    revenue: number;
+    image?: string;
+  }>;
+  salesOverTime: Array<{
+    date: string;
+    orders: number;
+    revenue: number;
+  }>;
+}
+
+export interface AnalyticsResponse {
+  success: boolean;
+  message?: string;
+  analytics?: SellerAnalytics;
+}
+
+export async function getSellerAnalytics(
+  token: string,
+  options?: { period?: string; startDate?: string; endDate?: string }
+): Promise<AnalyticsResponse> {
+  const params = new URLSearchParams();
+  if (options?.period) params.append('period', options.period);
+  if (options?.startDate) params.append('startDate', options.startDate);
+  if (options?.endDate) params.append('endDate', options.endDate);
+
+  const url = `${API_BASE_URL}/orders/seller/analytics${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}

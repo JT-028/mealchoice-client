@@ -104,10 +104,7 @@ export function ProductsPage() {
     );
   }, [searchQuery, products]);
 
-  // Get selected products info
-  const selectedProductsList = useMemo(() => {
-    return filteredProducts.filter(p => selectedProducts.has(p._id));
-  }, [filteredProducts, selectedProducts]);
+
 
   const handleAddClick = () => {
     setEditingProduct(null);

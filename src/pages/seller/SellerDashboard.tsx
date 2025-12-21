@@ -295,15 +295,15 @@ export function SellerDashboard() {
                     ₱{analytics?.summary.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 }) || '0.00'}
                   </div>
                   <div className="flex items-center gap-1 text-xs">
-                    {analytics?.summary.revenueChange !== 0 && (
+                    {analytics?.summary.revenueChange !== undefined && analytics.summary.revenueChange !== 0 && (
                       <>
-                        {analytics?.summary.revenueChange > 0 ? (
+                        {analytics.summary.revenueChange > 0 ? (
                           <TrendingUp className="h-3 w-3 text-green-500" />
                         ) : (
                           <TrendingDown className="h-3 w-3 text-red-500" />
                         )}
-                        <span className={analytics?.summary.revenueChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                          {Math.abs(analytics?.summary.revenueChange || 0)}% vs last period
+                        <span className={analytics.summary.revenueChange > 0 ? 'text-green-600' : 'text-red-600'}>
+                          {Math.abs(analytics.summary.revenueChange)}% vs last period
                         </span>
                       </>
                     )}
@@ -372,7 +372,7 @@ export function SellerDashboard() {
                         <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
                         <Tooltip
-                          formatter={(value: number) => [`₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 'Revenue']}
+                          formatter={(value) => [`₱${(value as number).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 'Revenue']}
                         />
                         <Line
                           type="monotone"
@@ -411,7 +411,7 @@ export function SellerDashboard() {
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                           labelLine={false}
                         >
                           {statusChartData.map((_, index) => (

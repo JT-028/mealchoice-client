@@ -26,6 +26,7 @@ import {
   Store,
   Home
 } from 'lucide-react';
+import { getImageUrl } from '@/config/api';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
@@ -194,7 +195,7 @@ export function OrdersPage() {
                   <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                     {item.image ? (
                       <img
-                        src={`http://localhost:5000${item.image}`}
+                        src={getImageUrl(item.image!)}
                         alt={item.name}
                         className="h-full w-full object-cover"
                       />

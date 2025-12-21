@@ -51,6 +51,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import { getImageUrl } from '@/config/api';
 
 export function ProductsPage() {
   const { token, user } = useAuth();
@@ -372,7 +373,7 @@ export function ProductsPage() {
                         <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
                           {product.image ? (
                             <img
-                              src={`http://localhost:5000${product.image}`}
+                              src={getImageUrl(product.image!)}
                               alt={product.name}
                               className="h-full w-full object-cover"
                             />

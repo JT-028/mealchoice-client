@@ -19,6 +19,7 @@ import {
   Minus,
   Check
 } from 'lucide-react';
+import { getImageUrl } from '@/config/api';
 
 export function BrowseProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -168,7 +169,7 @@ export function BrowseProducts() {
                       <div className="h-36 bg-muted flex items-center justify-center overflow-hidden">
                         {product.image ? (
                           <img
-                            src={`http://localhost:5000${product.image}`}
+                            src={getImageUrl(product.image!)}
                             alt={product.name}
                             className="h-full w-full object-cover"
                           />

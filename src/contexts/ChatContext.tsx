@@ -15,8 +15,7 @@ import {
     getMessages,
     getUnreadCount,
 } from '@/api/chat';
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+import { SOCKET_URL } from '@/config/api';
 
 interface ChatContextType {
     socket: Socket | null;

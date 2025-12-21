@@ -21,8 +21,7 @@ import {
   PRODUCT_UNITS,
 } from '@/api/products';
 import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000';
+import { getImageUrl } from '@/config/api';
 
 interface ProductFormProps {
   product?: Product | null;
@@ -48,7 +47,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
-    product?.image ? `${API_BASE_URL}${product.image}` : null
+    product?.image ? getImageUrl(product.image) : null
   );
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

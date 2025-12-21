@@ -25,8 +25,7 @@ import {
   MapPin,
   Plus
 } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000';
+import { getImageUrl } from '@/config/api';
 
 type PaymentMethod = 'qr' | 'cod';
 type DeliveryType = 'pickup' | 'delivery';
@@ -357,7 +356,7 @@ export function CheckoutPage() {
                         <div className="flex items-start gap-4">
                           <div className="h-32 w-32 bg-white p-2 rounded border flex-shrink-0">
                             <img
-                              src={`${API_BASE_URL}${sellerInfo.paymentQR}`}
+                              src={getImageUrl(sellerInfo.paymentQR!)}
                               alt="Payment QR"
                               className="w-full h-full object-contain"
                             />

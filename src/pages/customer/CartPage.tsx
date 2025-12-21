@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ShoppingBag
 } from 'lucide-react';
+import { getImageUrl } from '@/config/api';
 
 export function CartPage() {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ export function CartPage() {
                   <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                     {item.image ? (
                       <img
-                        src={`http://localhost:5000${item.image}`}
+                        src={getImageUrl(item.image!)}
                         alt={item.name}
                         className="h-full w-full object-cover"
                       />

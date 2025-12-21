@@ -21,14 +21,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { Check, HelpCircle, ChevronRight, Loader2, PartyPopper, Sparkles, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '@/config/api';
 
 // Import SVG assets
 import welcomeSvg from '@/assets/welcome.svg';
 import healthSvg from '@/assets/health_preference.svg';
 import mealSvg from '@/assets/meal_preferences.svg';
 import budgetSvg from '@/assets/budget_considerations.svg';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const steps = [
     { id: 1, title: 'Welcome', icon: welcomeSvg },

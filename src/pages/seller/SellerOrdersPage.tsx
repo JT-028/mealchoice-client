@@ -24,8 +24,7 @@ import {
   Calendar,
   X
 } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000';
+import { getImageUrl } from '@/config/api';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
@@ -471,7 +470,7 @@ export function SellerOrdersPage() {
                                 <div className="flex items-center gap-2">
                                   {item.image && (
                                     <img
-                                      src={`${API_BASE_URL}${item.image}`}
+                                      src={getImageUrl(item.image)}
                                       alt={item.name}
                                       className="h-8 w-8 rounded object-cover border bg-background"
                                     />
@@ -546,13 +545,13 @@ export function SellerOrdersPage() {
                                 <div className="flex items-start gap-4">
                                   <div className="h-24 w-24 bg-muted rounded border overflow-hidden shrink-0">
                                     <a
-                                      href={`${API_BASE_URL}${order.paymentProof}`}
+                                      href={getImageUrl(order.paymentProof!)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="block h-full w-full"
                                     >
                                       <img
-                                        src={`${API_BASE_URL}${order.paymentProof}`}
+                                        src={getImageUrl(order.paymentProof!)}
                                         alt="Payment Receipt"
                                         className="h-full w-full object-cover hover:opacity-80 transition-opacity"
                                       />

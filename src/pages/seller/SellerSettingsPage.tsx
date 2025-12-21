@@ -18,6 +18,7 @@ import {
   type OperatingHours,
   type DayHours
 } from '@/api/settings';
+import { getImageUrl } from '@/config/api';
 import {
   User,
   Lock,
@@ -31,8 +32,6 @@ import {
   Clock,
   MapPin
 } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000';
 
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Monday' },
@@ -92,7 +91,7 @@ export function SellerSettingsPage() {
           setNotifyNewOrders(s.notifyNewOrders ?? true);
           setNotifyLowStock(s.notifyLowStock ?? true);
           if (s.paymentQR) {
-            setQrPreview(`${API_BASE_URL}${s.paymentQR}`);
+            setQrPreview(getImageUrl(s.paymentQR));
           }
         }
       } catch (error) {
@@ -211,7 +210,7 @@ export function SellerSettingsPage() {
     try {
       const response = await uploadPaymentQR(token, file);
       if (response.success && response.paymentQR) {
-        setQrPreview(`${API_BASE_URL}${response.paymentQR}`);
+        setQrPreview(getImageUrl(response.paymentQR));
         showMessage('success', 'Payment QR uploaded');
       } else {
         showMessage('error', response.message || 'Failed to upload QR');

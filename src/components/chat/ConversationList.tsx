@@ -44,6 +44,7 @@ export function ConversationList({
     };
 
     const getOtherParticipant = (conversation: Conversation) => {
+        if (!conversation) return null;
         return user?.role === 'customer' ? conversation.seller : conversation.customer;
     };
 
@@ -73,6 +74,7 @@ export function ConversationList({
         <div className="flex flex-col">
             {conversations.map((conversation) => {
                 const otherPerson = getOtherParticipant(conversation);
+                if (!otherPerson) return null;
                 const isActive = activeConversationId === conversation._id;
 
                 return (
@@ -93,7 +95,7 @@ export function ConversationList({
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                                 <span className="font-medium text-sm truncate">
-                                    {otherPerson.name}
+                                    {otherPerson.name || 'Unknown User'}
                                 </span>
                                 {conversation.lastMessage && (
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -102,7 +104,7 @@ export function ConversationList({
                                 )}
                             </div>
 
-                            {user?.role === 'customer' && conversation.seller.marketLocation && (
+                            {user?.role === 'customer' && conversation.seller?.marketLocation && (
                                 <p className="text-xs text-muted-foreground truncate">
                                     {conversation.seller.marketLocation}
                                 </p>

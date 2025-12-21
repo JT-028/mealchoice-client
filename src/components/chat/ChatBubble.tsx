@@ -9,7 +9,8 @@ interface ChatBubbleProps {
 
 export function ChatBubble({ message, showSenderName = false }: ChatBubbleProps) {
     const { user } = useAuth();
-    const isOwn = user?.id === message.sender._id;
+    const senderId = message?.sender?._id;
+    const isOwn = (user?.id === senderId) || (user as any)?._id === senderId;
 
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -29,7 +30,7 @@ export function ChatBubble({ message, showSenderName = false }: ChatBubbleProps)
         >
             {showSenderName && !isOwn && (
                 <span className="text-xs text-muted-foreground px-2">
-                    {message.sender.name}
+                    {message?.sender?.name || 'Unknown User'}
                 </span>
             )}
             <div

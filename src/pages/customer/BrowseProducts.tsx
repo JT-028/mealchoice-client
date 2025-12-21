@@ -16,6 +16,7 @@ import {
   Package,
   ShoppingCart,
   Plus,
+  Minus,
   Check
 } from 'lucide-react';
 
@@ -25,7 +26,8 @@ export function BrowseProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
-  
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
   const { addItem, getItemQuantity, totalItems } = useCart();
 
   useEffect(() => {
@@ -56,8 +58,20 @@ export function BrowseProducts() {
     ...PRODUCT_CATEGORIES
   ];
 
+  const getQuantity = (productId: string) => quantities[productId] || 1;
+
+  const updateQuantity = (productId: string, delta: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [productId]: Math.max(1, (prev[productId] || 1) + delta)
+    }));
+  };
+
   const handleAddToCart = (product: Product) => {
-    addItem(product, 1);
+    const qty = getQuantity(product._id);
+    addItem(product, qty);
+    // Reset quantity after adding
+    setQuantities(prev => ({ ...prev, [product._id]: 1 }));
   };
 
   return (
@@ -137,7 +151,7 @@ export function BrowseProducts() {
                 <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No products found</h3>
                 <p className="text-muted-foreground">
-                  {searchQuery 
+                  {searchQuery
                     ? 'Try a different search term'
                     : 'No products available in this category yet'
                   }
@@ -147,7 +161,8 @@ export function BrowseProducts() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {products.map((product) => {
                   const inCart = getItemQuantity(product._id) > 0;
-                  
+                  const qty = getQuantity(product._id);
+
                   return (
                     <Card key={product._id}>
                       <div className="h-36 bg-muted flex items-center justify-center overflow-hidden">
@@ -168,43 +183,72 @@ export function BrowseProducts() {
                             {product.category}
                           </Badge>
                         </div>
-                        
+
                         {product.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                             {product.description}
                           </p>
                         )}
 
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-lg font-bold text-primary">
-                              ₱{product.price.toFixed(2)}
-                              <span className="text-sm font-normal text-muted-foreground">
-                                /{product.unit}
-                              </span>
-                            </p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {product.marketLocation}
-                            </p>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-lg font-bold text-primary">
+                                ₱{product.price.toFixed(2)}
+                                <span className="text-sm font-normal text-muted-foreground">
+                                  /{product.unit}
+                                </span>
+                              </p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {product.marketLocation}
+                              </p>
+                            </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant={inCart ? 'secondary' : 'default'}
-                            onClick={() => handleAddToCart(product)}
-                          >
-                            {inCart ? (
-                              <>
-                                <Check className="h-4 w-4 mr-1" />
-                                Added
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="h-4 w-4 mr-1" />
-                                Add
-                              </>
-                            )}
-                          </Button>
+
+                          {/* Quantity Picker */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center border rounded-lg">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-r-none"
+                                onClick={() => updateQuantity(product._id, -1)}
+                                disabled={qty <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-10 text-center font-medium text-sm">
+                                {qty}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-l-none"
+                                onClick={() => updateQuantity(product._id, 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={inCart ? 'secondary' : 'default'}
+                              onClick={() => handleAddToCart(product)}
+                              className="flex-1"
+                            >
+                              {inCart ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Add More
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
 
                         {typeof product.seller === 'object' && product.seller && (

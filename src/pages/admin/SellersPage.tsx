@@ -29,7 +29,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllSellers, updateSeller, deleteSeller, createSeller, type Seller } from '@/api/admin';
+import { getAllSellers, updateSeller, deleteSeller, createSeller, deactivateSeller, activateSeller, type Seller } from '@/api/admin';
 import {
   Users,
   Loader2,
@@ -39,7 +39,9 @@ import {
   Check,
   X,
   Search,
-  Plus
+  Plus,
+  Power,
+  PowerOff
 } from 'lucide-react';
 
 export function SellersPage() {
@@ -69,9 +71,14 @@ export function SellersPage() {
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
-    marketLocation: ''
+    marketLocation: '',
+    stallName: '',
+    stallNumber: ''
   });
   const [creating, setCreating] = useState(false);
+
+  // Deactivation state
+  const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
 
   const fetchSellers = async () => {
     if (!token) return;
@@ -156,12 +163,30 @@ export function SellersPage() {
       if (response.success) {
         fetchSellers();
         setCreateDialog(false);
-        setCreateForm({ name: '', email: '', marketLocation: '' });
+        setCreateForm({ name: '', email: '', marketLocation: '', stallName: '', stallNumber: '' });
       }
     } catch (error) {
       console.error('Error creating seller:', error);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleToggleStatus = async (seller: Seller) => {
+    if (!token) return;
+
+    setTogglingStatus(seller._id);
+    try {
+      const response = seller.isActive
+        ? await deactivateSeller(token, seller._id)
+        : await activateSeller(token, seller._id);
+      if (response.success) {
+        fetchSellers();
+      }
+    } catch (error) {
+      console.error('Error toggling seller status:', error);
+    } finally {
+      setTogglingStatus(null);
     }
   };
 
@@ -274,21 +299,41 @@ export function SellersPage() {
                       {formatDate(seller.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditClick(seller)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => handleDeleteClick(seller)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(seller)}
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleStatus(seller)}
+                          disabled={togglingStatus === seller._id}
+                          title={seller.isActive ? 'Deactivate' : 'Activate'}
+                          className={seller.isActive ? 'text-orange-500 hover:text-orange-600' : 'text-green-500 hover:text-green-600'}
+                        >
+                          {togglingStatus === seller._id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : seller.isActive ? (
+                            <PowerOff className="h-4 w-4" />
+                          ) : (
+                            <Power className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteClick(seller)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -429,6 +474,24 @@ export function SellersPage() {
                     <SelectItem value="Pampanga Market">Pampanga Market</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newStallName">Stall Name</Label>
+                <Input
+                  id="newStallName"
+                  value={createForm.stallName}
+                  onChange={(e) => setCreateForm({ ...createForm, stallName: e.target.value })}
+                  placeholder="e.g., Maria's Fresh Produce"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newStallNumber">Stall Number</Label>
+                <Input
+                  id="newStallNumber"
+                  value={createForm.stallNumber}
+                  onChange={(e) => setCreateForm({ ...createForm, stallNumber: e.target.value })}
+                  placeholder="e.g., A-15"
+                />
               </div>
             </div>
 

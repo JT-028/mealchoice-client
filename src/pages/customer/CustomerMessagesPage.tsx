@@ -99,13 +99,13 @@ export function CustomerMessagesPage() {
     };
 
     const filteredSellers = sellers.filter((seller) =>
-        seller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        seller.marketLocation?.toLowerCase().includes(searchQuery.toLowerCase())
+        seller?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        seller?.marketLocation?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Filter out sellers who already have conversations
-    const existingSellerIds = new Set(conversations.map((c) => c.seller._id));
-    const newSellers = filteredSellers.filter((s) => !existingSellerIds.has(s._id));
+    const existingSellerIds = new Set(conversations.map((c) => c.seller?._id).filter(Boolean));
+    const newSellers = filteredSellers.filter((s) => s && !existingSellerIds.has(s._id));
 
     return (
         <CustomerLayout noPadding>

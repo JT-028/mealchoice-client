@@ -27,6 +27,10 @@ import {
   type UserSettings
 } from '@/api/settings';
 import {
+  getPreferences,
+  updatePreferences
+} from '@/api/preferences';
+import {
   User,
   Lock,
   Palette,
@@ -36,8 +40,21 @@ import {
   Check,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Utensils
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  TooltipProvider,
+} from '@/components/ui/tooltip';
+
+const dietaryOptions = [
+  'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free',
+  'Nut-Free', 'Halal', 'Kosher', 'Low-Sodium', 'Diabetic-Friendly'
+];
+
+const mealTypeOptions = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+const cuisineOptions = ['Filipino', 'Asian', 'Western', 'Mediterranean', 'Indian', 'Mexican'];
 
 export function CustomerSettingsPage() {
   const navigate = useNavigate();
@@ -60,6 +77,33 @@ export function CustomerSettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  // Preference states
+  const [prefLoading, setPrefLoading] = useState(false);
+  const [health, setHealth] = useState({
+    height: '',
+    weight: '',
+    age: '',
+    sex: '',
+    activityLevel: '',
+    dietaryRestrictions: [] as string[],
+  });
+  const [meal, setMeal] = useState({
+    preferredMealTypes: [] as string[],
+    preferredCuisines: [] as string[],
+    preferredIngredients: '',
+    avoidedIngredients: '',
+    calorieMin: 1200,
+    calorieMax: 2500,
+    maxSodium: 2300,
+    maxSugar: 50,
+    maxFats: 65,
+  });
+  const [budget, setBudget] = useState({
+    weeklyBudget: '',
+    budgetPerMeal: '',
+    prefersPriceRange: '',
+  });
+
   useEffect(() => {
     const fetchSettings = async () => {
       if (!token) return;
@@ -79,6 +123,108 @@ export function CustomerSettingsPage() {
     };
     fetchSettings();
   }, [token]);
+
+  const fetchPreferences = async () => {
+    if (!token) return;
+    setPrefLoading(true);
+    try {
+      const response = await getPreferences(token);
+      if (response.success && response.preferences) {
+        const p = response.preferences;
+        setHealth({
+          height: (p.height || '').toString(),
+          weight: (p.weight || '').toString(),
+          age: (p.age || '').toString(),
+          sex: p.sex || '',
+          activityLevel: p.activityLevel || '',
+          dietaryRestrictions: p.dietaryRestrictions || [],
+        });
+        setMeal({
+          preferredMealTypes: p.preferredMealTypes || [],
+          preferredCuisines: p.preferredCuisines || [],
+          preferredIngredients: (p.preferredIngredients || []).join(', '),
+          avoidedIngredients: (p.avoidedIngredients || []).join(', '),
+          calorieMin: p.calorieMin || 1200,
+          calorieMax: p.calorieMax || 2500,
+          maxSodium: p.maxSodium || 2300,
+          maxSugar: p.maxSugar || 50,
+          maxFats: p.maxFats || 65,
+        });
+        setBudget({
+          weeklyBudget: (p.weeklyBudget || '').toString(),
+          budgetPerMeal: (p.budgetPerMeal || '').toString(),
+          prefersPriceRange: p.prefersPriceRange || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+    } finally {
+      setPrefLoading(false);
+    }
+  };
+
+  const toggleDietaryRestriction = (restriction: string) => {
+    setHealth(prev => ({
+      ...prev,
+      dietaryRestrictions: prev.dietaryRestrictions.includes(restriction)
+        ? prev.dietaryRestrictions.filter(r => r !== restriction)
+        : [...prev.dietaryRestrictions, restriction]
+    }));
+  };
+
+  const toggleMealType = (type: string) => {
+    setMeal(prev => ({
+      ...prev,
+      preferredMealTypes: prev.preferredMealTypes.includes(type)
+        ? prev.preferredMealTypes.filter(t => t !== type)
+        : [...prev.preferredMealTypes, type]
+    }));
+  };
+
+  const toggleCuisine = (cuisine: string) => {
+    setMeal(prev => ({
+      ...prev,
+      preferredCuisines: prev.preferredCuisines.includes(cuisine)
+        ? prev.preferredCuisines.filter(c => c !== cuisine)
+        : [...prev.preferredCuisines, cuisine]
+    }));
+  };
+
+  const handleUpdatePreferences = async () => {
+    if (!token) return;
+    setSaving(true);
+    try {
+      const response = await updatePreferences(token, {
+        height: health.height ? Number(health.height) : null,
+        weight: health.weight ? Number(health.weight) : null,
+        age: health.age ? Number(health.age) : null,
+        sex: (health.sex as any) || null,
+        activityLevel: (health.activityLevel as any) || null,
+        dietaryRestrictions: health.dietaryRestrictions,
+        preferredMealTypes: meal.preferredMealTypes,
+        preferredCuisines: meal.preferredCuisines,
+        preferredIngredients: meal.preferredIngredients.split(',').map(i => i.trim()).filter(Boolean),
+        avoidedIngredients: meal.avoidedIngredients.split(',').map(i => i.trim()).filter(Boolean),
+        calorieMin: meal.calorieMin,
+        calorieMax: meal.calorieMax,
+        maxSodium: meal.maxSodium,
+        maxSugar: meal.maxSugar,
+        maxFats: meal.maxFats,
+        weeklyBudget: budget.weeklyBudget ? Number(budget.weeklyBudget) : null,
+        budgetPerMeal: budget.budgetPerMeal ? Number(budget.budgetPerMeal) : null,
+        prefersPriceRange: (budget.prefersPriceRange as any) || null,
+      });
+      if (response.success) {
+        showMessage('success', 'Preferences updated successfully');
+      } else {
+        showMessage('error', response.message || 'Failed to update preferences');
+      }
+    } catch {
+      showMessage('error', 'Error updating preferences');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
     const root = document.documentElement;
@@ -219,9 +365,10 @@ export function CustomerSettingsPage() {
           </div>
         )}
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full">
+        <Tabs defaultValue="profile" className="space-y-6" onValueChange={(val) => val === 'preferences' && fetchPreferences()}>
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="profile"><User className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="preferences"><Utensils className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="security"><Lock className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="appearance"><Palette className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="data"><Download className="h-4 w-4" /></TabsTrigger>
@@ -254,6 +401,177 @@ export function CustomerSettingsPage() {
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
                   Save Changes
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Preferences Tab */}
+          <TabsContent value="preferences">
+            <Card>
+              <CardHeader>
+                <CardTitle>Food Preferences</CardTitle>
+                <CardDescription>Tailor your meal recommendations and health goals</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {prefLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <>
+                    {/* Health Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold border-b pb-2">Health & Physical</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="height">Height (cm)</Label>
+                          <Input
+                            id="height"
+                            type="number"
+                            value={health.height}
+                            onChange={(e) => setHealth({ ...health, height: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="weight">Weight (kg)</Label>
+                          <Input
+                            id="weight"
+                            type="number"
+                            value={health.weight}
+                            onChange={(e) => setHealth({ ...health, weight: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="age">Age</Label>
+                          <Input
+                            id="age"
+                            type="number"
+                            value={health.age}
+                            onChange={(e) => setHealth({ ...health, age: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Dietary Restrictions</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {dietaryOptions.map(option => (
+                            <Badge
+                              key={option}
+                              variant={health.dietaryRestrictions.includes(option) ? 'default' : 'outline'}
+                              className="cursor-pointer"
+                              onClick={() => toggleDietaryRestriction(option)}
+                            >
+                              {option}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Meal Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold border-b pb-2">Meal Preferences</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Preferred Meal Types</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {mealTypeOptions.map(type => (
+                              <Badge
+                                key={type}
+                                variant={meal.preferredMealTypes.includes(type) ? 'default' : 'outline'}
+                                className="cursor-pointer"
+                                onClick={() => toggleMealType(type)}
+                              >
+                                {type}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Preferred Cuisines</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {cuisineOptions.map(cuisine => (
+                              <Badge
+                                key={cuisine}
+                                variant={meal.preferredCuisines.includes(cuisine) ? 'default' : 'outline'}
+                                className="cursor-pointer"
+                                onClick={() => toggleCuisine(cuisine)}
+                              >
+                                {cuisine}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="preferredIngredients">Preferred Ingredients</Label>
+                          <Input
+                            id="preferredIngredients"
+                            placeholder="e.g., chicken, rice"
+                            value={meal.preferredIngredients}
+                            onChange={(e) => setMeal({ ...meal, preferredIngredients: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="avoidedIngredients">Avoided Ingredients</Label>
+                          <Input
+                            id="avoidedIngredients"
+                            placeholder="e.g., peanuts, shellfish"
+                            value={meal.avoidedIngredients}
+                            onChange={(e) => setMeal({ ...meal, avoidedIngredients: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Nutrients Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold border-b pb-2">Daily Nutritional Targets</h3>
+                      <TooltipProvider>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <Label>Calorie Min</Label>
+                            <Input
+                              type="number"
+                              value={meal.calorieMin}
+                              onChange={(e) => setMeal({ ...meal, calorieMin: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Calorie Max</Label>
+                            <Input
+                              type="number"
+                              value={meal.calorieMax}
+                              onChange={(e) => setMeal({ ...meal, calorieMax: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Max Sodium (mg)</Label>
+                            <Input
+                              type="number"
+                              value={meal.maxSodium}
+                              onChange={(e) => setMeal({ ...meal, maxSodium: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Max Sugar (g)</Label>
+                            <Input
+                              type="number"
+                              value={meal.maxSugar}
+                              onChange={(e) => setMeal({ ...meal, maxSugar: Number(e.target.value) })}
+                            />
+                          </div>
+                        </div>
+                      </TooltipProvider>
+                    </div>
+
+                    <Button onClick={handleUpdatePreferences} disabled={saving} className="w-full sm:w-auto">
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                      Update Preferences
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

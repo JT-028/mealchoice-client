@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getBudget, type Budget } from '@/api/budget';
+import { getSavedMeals } from '@/api/recommendations';
 import {
   Wallet,
   ShoppingBag,
@@ -20,29 +21,37 @@ import {
 export function CustomerDashboard() {
   const { token, user } = useAuth();
   const [budget, setBudget] = useState<Budget | null>(null);
-  const [loading, setLoading] = useState(true);
+   const [loading, setLoading] = useState(true);
+   const [savedMealsCount, setSavedMealsCount] = useState(0);
 
   // Mock spending data (will be real later)
   const todaySpent = 185;
   const weeklySpent = 1250;
 
   useEffect(() => {
-    const fetchBudget = async () => {
+    const fetchDashboardData = async () => {
       if (!token) return;
       
       try {
-        const response = await getBudget(token);
-        if (response.success && response.budget) {
-          setBudget(response.budget);
+        const [budgetRes, mealsRes] = await Promise.all([
+          getBudget(token),
+          getSavedMeals(token)
+        ]);
+
+        if (budgetRes.success && budgetRes.budget) {
+          setBudget(budgetRes.budget);
+        }
+        if (mealsRes.success && mealsRes.data) {
+          setSavedMealsCount(mealsRes.data.length);
         }
       } catch (error) {
-        console.error('Error fetching budget:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBudget();
+    fetchDashboardData();
   }, [token]);
 
   const dailyRemaining = budget ? budget.dailyLimit - todaySpent : 0;
@@ -119,8 +128,10 @@ export function CustomerDashboard() {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">No meals planned yet</p>
+                  <div className="text-2xl font-bold">{savedMealsCount}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {savedMealsCount > 0 ? `${savedMealsCount} favorite meals saved` : 'No meals planned yet'}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -165,7 +176,7 @@ export function CustomerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <Button variant="ghost" asChild className="p-0 h-auto">
-                    <Link to="/customer/meals">
+                    <Link to="/customer/ai-meal-planner">
                       Plan Now <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>

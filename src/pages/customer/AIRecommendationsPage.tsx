@@ -3,7 +3,7 @@ import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getAIRecommendations, type RecommendationResponse } from '@/api/recommendations';
+import { getAIRecommendations, saveMeal, type RecommendationResponse } from '@/api/recommendations';
 import { 
   Sparkles, 
   Flame, 
@@ -15,7 +15,8 @@ import {
   UtensilsCrossed,
   CheckCircle2,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Bookmark
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,6 +25,21 @@ export default function AIRecommendationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<RecommendationResponse['data'] | null>(null);
+  const [savingMeal, setSavingMeal] = useState<number | null>(null);
+  const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
+
+  const handleSaveMeal = async (meal: any, index: number) => {
+    if (!token) return;
+    try {
+      setSavingMeal(index);
+      await saveMeal(token, meal);
+      setSavedIndices(prev => new Set(prev).add(index));
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setSavingMeal(null);
+    }
+  };
 
   useEffect(() => {
     if (token) {
@@ -190,9 +206,24 @@ export default function AIRecommendationsPage() {
                     </ul>
                   </div>
                 </CardContent>
-                <div className="p-6 pt-0 mt-auto">
-                  <Button className="w-full gap-2 group/btn">
-                    View Details
+                <div className="p-6 pt-0 mt-auto flex gap-3">
+                  <Button 
+                    className="flex-1 gap-2 group/btn"
+                    onClick={() => handleSaveMeal(meal, index)}
+                    disabled={savingMeal === index || savedIndices.has(index)}
+                    variant={savedIndices.has(index) ? "outline" : "default"}
+                  >
+                    {savingMeal === index ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : savedIndices.has(index) ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                    {savedIndices.has(index) ? 'Saved' : 'Save Meal'}
+                  </Button>
+                  <Button variant="outline" className="flex-1 gap-2 group/btn">
+                    Details
                     <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
                 </div>

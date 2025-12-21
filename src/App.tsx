@@ -26,6 +26,7 @@ import { CustomerMessagesPage } from './pages/customer/CustomerMessagesPage';
 import { CustomerSettingsPage } from './pages/customer/CustomerSettingsPage';
 import { OnboardingPage } from './pages/customer/OnboardingPage';
 import AIRecommendationsPage from './pages/customer/AIRecommendationsPage';
+import AIMealPlannerPage from './pages/customer/AIMealPlannerPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -184,12 +185,10 @@ function App() {
                 }
               />
               <Route
-                path="/customer/meals"
+                path="/customer/ai-meal-planner"
                 element={
                   <ProtectedRoute allowedRoles={['customer']}>
-                    <div className="p-8 text-center text-muted-foreground">
-                      Meal Planner coming soon...
-                    </div>
+                    <AIMealPlannerPage />
                   </ProtectedRoute>
                 }
               />

@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { UtensilsCrossed, Menu, X, LogOut, User } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,6 +13,23 @@ export function Header() {
     logout();
     navigate('/');
   };
+
+  // Smooth scroll to section
+  const scrollToSection = useCallback((e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const headerHeight = 64; // Height of the sticky header
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      const offsetPosition = elementPosition - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    setMobileMenuOpen(false);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -27,13 +44,25 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <a 
+            href="#features" 
+            onClick={(e) => scrollToSection(e, 'features')}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
             Features
           </a>
-          <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <a 
+            href="#how-it-works"
+            onClick={(e) => scrollToSection(e, 'how-it-works')}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
             How It Works
           </a>
-          <a href="#users" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <a 
+            href="#users"
+            onClick={(e) => scrollToSection(e, 'users')}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
             For Users
           </a>
         </nav>
@@ -89,21 +118,21 @@ export function Header() {
             <a 
               href="#features" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => scrollToSection(e, 'features')}
             >
               Features
             </a>
             <a 
               href="#how-it-works" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => scrollToSection(e, 'how-it-works')}
             >
               How It Works
             </a>
             <a 
               href="#users" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => scrollToSection(e, 'users')}
             >
               For Users
             </a>

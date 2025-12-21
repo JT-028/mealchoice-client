@@ -58,6 +58,8 @@ export function SellersPage() {
     name: '',
     email: '',
     marketLocation: '',
+    stallName: '',
+    stallNumber: '',
     isActive: true
   });
   const [saving, setSaving] = useState(false);
@@ -110,6 +112,8 @@ export function SellersPage() {
       name: seller.name,
       email: seller.email,
       marketLocation: seller.marketLocation || '',
+      stallName: seller.stallName || '',
+      stallNumber: seller.stallNumber || '',
       isActive: seller.isActive
     });
     setEditDialog(true);
@@ -262,6 +266,7 @@ export function SellersPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Market</TableHead>
+                  <TableHead>Stall</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Verified</TableHead>
                   <TableHead>Joined</TableHead>
@@ -279,6 +284,16 @@ export function SellersPage() {
                           <MapPin className="h-3 w-3" />
                           {seller.marketLocation.replace(' Market', '')}
                         </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {seller.stallName || seller.stallNumber ? (
+                        <div className="text-sm">
+                          {seller.stallName && <div className="font-medium">{seller.stallName}</div>}
+                          {seller.stallNumber && <div className="text-muted-foreground">#{seller.stallNumber}</div>}
+                        </div>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
@@ -384,6 +399,26 @@ export function SellersPage() {
                     <SelectItem value="Pampanga Market">Pampanga Market</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stallName">Stall Name</Label>
+                  <Input
+                    id="stallName"
+                    value={editForm.stallName}
+                    onChange={(e) => setEditForm({ ...editForm, stallName: e.target.value })}
+                    placeholder="e.g., Fresh Produce"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stallNumber">Stall Number</Label>
+                  <Input
+                    id="stallNumber"
+                    value={editForm.stallNumber}
+                    onChange={(e) => setEditForm({ ...editForm, stallNumber: e.target.value })}
+                    placeholder="e.g., A-15"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <input

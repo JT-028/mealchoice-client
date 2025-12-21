@@ -1,5 +1,21 @@
 const API_BASE_URL = 'http://localhost:5000/api';
 
+export interface DayHours {
+  open: string;
+  close: string;
+  isClosed: boolean;
+}
+
+export interface OperatingHours {
+  monday: DayHours;
+  tuesday: DayHours;
+  wednesday: DayHours;
+  thursday: DayHours;
+  friday: DayHours;
+  saturday: DayHours;
+  sunday: DayHours;
+}
+
 export interface UserSettings {
   name: string;
   email: string;
@@ -8,7 +24,10 @@ export interface UserSettings {
   role: string;
   // Seller-specific
   marketLocation?: string;
-  storeHours?: { open: string; close: string };
+  stallName?: string;
+  stallNumber?: string;
+  operatingHours?: OperatingHours;
+  customCategories?: string[];
   notifyNewOrders?: boolean;
   notifyLowStock?: boolean;
   paymentQR?: string;
@@ -106,7 +125,7 @@ export async function exportOrders(token: string): Promise<Blob> {
 export async function updateSellerSettings(
   token: string,
   data: {
-    storeHours?: { open?: string; close?: string };
+    operatingHours?: Partial<OperatingHours>;
     notifyNewOrders?: boolean;
     notifyLowStock?: boolean;
   }

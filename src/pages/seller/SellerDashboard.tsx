@@ -30,7 +30,8 @@ import {
   TrendingDown,
   Printer,
   DollarSign,
-  Calendar
+  Calendar,
+  XCircle
 } from 'lucide-react';
 
 const PERIOD_OPTIONS = [
@@ -216,6 +217,7 @@ export function SellerDashboard() {
   };
 
   const lowStockProducts = products.filter(p => p.quantity > 0 && p.quantity <= p.lowStockThreshold);
+  const outOfStockProducts = products.filter(p => p.quantity === 0);
 
   // Show pending verification message for unverified sellers
   if (!user?.isVerified) {
@@ -500,6 +502,48 @@ export function SellerDashboard() {
                         <Button variant="ghost" asChild className="w-full">
                           <Link to="/seller/products">
                             View all {lowStockProducts.length} items
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Out of Stock Alert */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    Out of Stock
+                  </CardTitle>
+                  <CardDescription>Products that need restocking</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {outOfStockProducts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">
+                      ✅ No products are out of stock!
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {outOfStockProducts.slice(0, 5).map((product) => (
+                        <div key={product._id} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {product.category}
+                            </p>
+                          </div>
+                          <Badge variant="destructive">
+                            Out of Stock
+                          </Badge>
+                        </div>
+                      ))}
+                      {outOfStockProducts.length > 5 && (
+                        <Button variant="ghost" asChild className="w-full">
+                          <Link to="/seller/inventory">
+                            View all {outOfStockProducts.length} items
                             <ArrowRight className="h-4 w-4 ml-2" />
                           </Link>
                         </Button>

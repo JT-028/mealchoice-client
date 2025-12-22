@@ -16,7 +16,7 @@ import {
 
 export function BudgetSettings() {
   const { token } = useAuth();
-  const [budget, setBudget] = useState<Budget | null>(null);
+  const [_budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);

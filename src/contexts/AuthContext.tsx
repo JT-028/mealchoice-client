@@ -28,17 +28,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedToken = localStorage.getItem(TOKEN_KEY);
         const storedUser = localStorage.getItem(USER_KEY);
 
+        console.log('[AuthContext] Loading auth state');
+        console.log('[AuthContext] Stored user from localStorage:', storedUser ? JSON.parse(storedUser) : null);
+
         if (storedToken && storedUser) {
           // Verify token is still valid
           const response = await getProfile(storedToken);
 
+          console.log('[AuthContext] getProfile response:', response);
+
           if (response.success && response.user) {
             setToken(storedToken);
             setUser(response.user);
+            console.log('[AuthContext] User set from API:', response.user);
           } else {
             // Token is invalid, clear storage
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(USER_KEY);
+            console.log('[AuthContext] Token invalid, cleared storage');
           }
         }
       } catch (error) {
@@ -54,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (newToken: string, newUser: User) => {
+    console.log('[AuthContext] login() called with user:', newUser);
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem(TOKEN_KEY, newToken);
@@ -61,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    console.log('[AuthContext] logout() called');
     setToken(null);
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
@@ -70,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = (updates: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...updates };
+      console.log('[AuthContext] updateUser() called');
+      console.log('[AuthContext] Current user:', user);
+      console.log('[AuthContext] Updates:', updates);
+      console.log('[AuthContext] Updated user:', updatedUser);
       setUser(updatedUser);
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     }

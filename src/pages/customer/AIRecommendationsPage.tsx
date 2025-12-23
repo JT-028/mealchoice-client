@@ -155,14 +155,23 @@ export default function AIRecommendationsPage() {
         <div className="relative z-10 -mt-20 px-6 lg:px-12 pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {data?.recommendations.map((meal, index) => (
-              <Card key={index} className="flex flex-col border-none shadow-xl hover:shadow-2xl transition-all duration-300 group">
-                <div className="h-2 w-full bg-primary/20 group-hover:bg-primary transition-colors" />
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10">
+              <Card key={index} className="flex flex-col border-none shadow-xl hover:shadow-2xl transition-all duration-300 group overflow-hidden">
+                <div className="h-48 w-full overflow-hidden relative">
+                  <img 
+                    src={meal.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'} 
+                    alt={meal.mealName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <Badge variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-white/20">
                       Recommendation #{index + 1}
                     </Badge>
-                    <div className="flex items-center gap-1 font-bold text-lg">
+                  </div>
+                </div>
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-1 font-bold text-lg text-primary">
                       <CircleDollarSign className="h-4 w-4 text-green-500" />
                       <span>{meal.estimatedCost.toFixed(2)}</span>
                     </div>

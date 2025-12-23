@@ -11,6 +11,7 @@ export interface Recommendation {
   };
   estimatedCost: number;
   ingredients: string[];
+  imageUrl?: string;
 }
 
 export interface RecommendationResponse {
@@ -23,9 +24,9 @@ export interface RecommendationResponse {
 }
 
 export interface MealPlanDay {
-  breakfast: { mealName: string; calories: number; description: string };
-  lunch: { mealName: string; calories: number; description: string };
-  dinner: { mealName: string; calories: number; description: string };
+  breakfast: { mealName: string; calories: number; description: string; imageUrl?: string };
+  lunch: { mealName: string; calories: number; description: string; imageUrl?: string };
+  dinner: { mealName: string; calories: number; description: string; imageUrl?: string };
 }
 
 export interface MealPlanResponse {

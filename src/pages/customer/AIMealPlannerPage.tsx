@@ -76,9 +76,9 @@ export default function AIMealPlannerPage() {
     
     if (dayPlan) {
       // Logic: If breakfast is empty, add there, else lunch, else dinner
-      if (!dayPlan.breakfast.mealName) dayPlan.breakfast = { mealName: meal.mealName, calories: meal.calories, description: meal.description };
-      else if (!dayPlan.lunch.mealName) dayPlan.lunch = { mealName: meal.mealName, calories: meal.calories, description: meal.description };
-      else dayPlan.dinner = { mealName: meal.mealName, calories: meal.calories, description: meal.description };
+      if (!dayPlan.breakfast.mealName) dayPlan.breakfast = { mealName: meal.mealName, calories: meal.calories, description: meal.description, imageUrl: meal.imageUrl };
+      else if (!dayPlan.lunch.mealName) dayPlan.lunch = { mealName: meal.mealName, calories: meal.calories, description: meal.description, imageUrl: meal.imageUrl };
+      else dayPlan.dinner = { mealName: meal.mealName, calories: meal.calories, description: meal.description, imageUrl: meal.imageUrl };
       
       setPlan(newPlan);
       localStorage.setItem('ai_meal_plan', JSON.stringify(newPlan));
@@ -174,10 +174,16 @@ export default function AIMealPlannerPage() {
                     return (
                       <Card key={mealType} className="overflow-hidden border-none shadow-lg group hover:shadow-xl transition-all duration-300">
                         <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x dark:divide-slate-800">
-                          <div className="w-full md:w-48 bg-slate-50 dark:bg-slate-900/50 p-6 flex flex-col items-center justify-center text-center">
-                            <h3 className="text-sm font-black uppercase text-primary tracking-widest mb-1">{mealType}</h3>
-                            <Clock className="h-5 w-5 mb-2 opacity-20" />
-                            <Badge variant="outline" className="font-bold">{meal.calories} kcal</Badge>
+                          <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                            <img 
+                              src={meal.imageUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=800&auto=format&fit=crop'} 
+                              alt={meal.mealName}
+                              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-100 transition-opacity duration-500"
+                            />
+                            <div className="relative z-10 p-6">
+                              <h3 className="text-sm font-black uppercase text-primary tracking-widest mb-1 drop-shadow-md">{mealType}</h3>
+                              <Badge variant="secondary" className="font-bold bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">{meal.calories} kcal</Badge>
+                            </div>
                           </div>
                           <div className="flex-1 p-6 flex flex-col justify-between">
                             <div>
@@ -239,21 +245,31 @@ export default function AIMealPlannerPage() {
               {savedMeals.length > 0 ? (
                 savedMeals.map((meal) => (
                   <Card key={meal._id} className="border-none bg-slate-50 dark:bg-slate-900 hover:shadow-md transition-all group">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold line-clamp-1 group-hover:text-primary transition-colors">{meal.mealName}</h4>
-                        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap ml-2">{meal.calories} kcal</span>
+                    <CardContent className="p-0 overflow-hidden">
+                      <div className="h-24 w-full relative">
+                        <img 
+                          src={meal.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'} 
+                          alt={meal.mealName}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end">
+                          <h4 className="font-bold text-white text-sm line-clamp-1">{meal.mealName}</h4>
+                          <span className="text-[10px] font-bold text-white/80 whitespace-nowrap ml-2">{meal.calories} kcal</span>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{meal.description}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full text-xs font-bold gap-1 h-8 rounded-lg"
-                        onClick={() => handleAddToDay(meal)}
-                      >
-                        <ChevronRight className="h-3 w-3" />
-                        Add to Day
-                      </Button>
+                      <div className="p-3">
+                        <p className="text-[10px] text-muted-foreground line-clamp-1 mb-3">{meal.description}</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full text-[10px] font-bold gap-1 h-7 rounded-lg"
+                          onClick={() => handleAddToDay(meal)}
+                        >
+                          <ChevronRight className="h-3 w-3" />
+                          Add to Day
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))

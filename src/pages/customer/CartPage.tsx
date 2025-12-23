@@ -36,7 +36,7 @@ export function CartPage() {
       <CustomerLayout>
         <div className="max-w-2xl mx-auto text-center py-12">
           <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Your cart is empty</h1>
           <p className="text-muted-foreground mb-6">
             Browse products from local markets and add items to your cart.
           </p>

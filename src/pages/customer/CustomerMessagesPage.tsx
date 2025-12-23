@@ -118,8 +118,8 @@ export function CustomerMessagesPage() {
                     <div className="h-full flex flex-col">
                         <div className="p-4 border-b">
                             <div className="flex items-center justify-between mb-1">
-                                <h1 className="text-lg font-semibold">Messages</h1>
-                                <Button size="sm" variant="outline" onClick={handleOpenNewChat}>
+                                <h1 className="text-lg font-semibold text-foreground">Messages</h1>
+                                <Button size="sm" className="text-foreground" variant="outline" onClick={handleOpenNewChat}>
                                     <Plus className="h-4 w-4 mr-1" />
                                     New Chat
                                 </Button>
@@ -161,7 +161,7 @@ export function CustomerMessagesPage() {
                             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                                 <MessageSquare className="h-8 w-8 text-primary" />
                             </div>
-                            <h2 className="text-xl font-semibold mb-2">Your Messages</h2>
+                            <h2 className="text-xl font-semibold mb-2 text-foreground">Your Messages</h2>
                             <p className="text-muted-foreground max-w-sm mb-4">
                                 Start a conversation with sellers to ask about products, availability, or place custom orders.
                             </p>

@@ -15,10 +15,28 @@ import {
   Info,
   History
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAIMealPlan, getSavedMeals, type MealPlanResponse, type SavedMeal } from '@/api/recommendations';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function ImageWithSkeleton({ src, alt, className, containerClassName }: { src: string; alt: string; className?: string; containerClassName?: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className={cn("relative overflow-hidden", containerClassName)}>
+      {!loaded && <Skeleton className="absolute inset-0 w-full h-full" />}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(className, "transition-opacity duration-500", !loaded ? "opacity-0" : "opacity-100")}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
+
+import { cn } from '@/lib/utils';
 
 export default function AIMealPlannerPage() {
   const { token } = useAuth();
@@ -107,7 +125,7 @@ export default function AIMealPlannerPage() {
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">AI Integration</span>
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight">AI Meal Planner</h1>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">AI Meal Planner</h1>
             <p className="text-muted-foreground mt-2">Your data-driven weekly nutrition strategy.</p>
           </div>
           <Button 
@@ -140,10 +158,10 @@ export default function AIMealPlannerPage() {
                     { label: 'Carbs', value: plan.weeklyMacros.avgCarbs, unit: '' },
                     { label: 'Fats', value: plan.weeklyMacros.avgFats, unit: '' },
                   ].map((stat, i) => (
-                    <Card key={i} className="border-none bg-slate-50 dark:bg-slate-900 shadow-sm">
+                    <Card key={i} className="border-none shadow-sm">
                       <CardContent className="p-4">
                         <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{stat.label}</p>
-                        <p className="text-xl font-black mt-1">{stat.value}<span className="text-xs ml-1 font-normal opacity-60">{stat.unit}</span></p>
+                        <p className="text-xl font-black mt-1 text-foreground">{stat.value}<span className="text-xs ml-1 font-normal opacity-60 text-muted-foreground">{stat.unit}</span></p>
                       </CardContent>
                     </Card>
                   ))}
@@ -156,7 +174,7 @@ export default function AIMealPlannerPage() {
                       key={day}
                       variant={activeDay === day ? 'default' : 'outline'}
                       onClick={() => setActiveDay(day)}
-                      className={`min-w-[120px] rounded-xl font-bold ${activeDay === day ? 'shadow-md shadow-primary/20' : ''}`}
+                      className={`min-w-[120px] rounded-xl font-bold text-foreground ${activeDay === day ? 'shadow-md shadow-primary/20' : ''}`}
                     >
                       {day === DAYS[new Date().getDay()] ? 'Today' : day}
                     </Button>
@@ -174,15 +192,23 @@ export default function AIMealPlannerPage() {
                     return (
                       <Card key={mealType} className="overflow-hidden border-none shadow-lg group hover:shadow-xl transition-all duration-300">
                         <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x dark:divide-slate-800">
-                          <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center relative overflow-hidden">
-                            <img 
+                          <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[240px]">
+                            <ImageWithSkeleton 
                               src={meal.imageUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=800&auto=format&fit=crop'} 
                               alt={meal.mealName}
-                              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-100 transition-opacity duration-500"
+                              containerClassName="absolute inset-0 w-full h-full"
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             />
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-500" />
                             <div className="relative z-10 p-6">
-                              <h3 className="text-sm font-black uppercase text-primary tracking-widest mb-1 drop-shadow-md">{mealType}</h3>
-                              <Badge variant="secondary" className="font-bold bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">{meal.calories} kcal</Badge>
+                              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-lg inline-block mb-2">
+                                <h3 className="text-xs font-black uppercase text-primary tracking-widest">{mealType}</h3>
+                              </div>
+                              <div className="block">
+                                <Badge variant="secondary" className="font-bold bg-white/20 text-white border-white/30 backdrop-blur-sm pointer-events-none tracking-tight">
+                                  {meal.calories} kcal
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                           <div className="flex-1 p-6 flex flex-col justify-between">
@@ -234,7 +260,7 @@ export default function AIMealPlannerPage() {
           {/* Sidebar - Saved Meals */}
           <div className="space-y-6">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-xl font-black flex items-center gap-2">
+              <h2 className="text-xl font-black flex items-center gap-2 text-foreground">
                 <Bookmark className="h-5 w-5 text-primary" />
                 Saved Meals
               </h2>
@@ -247,15 +273,18 @@ export default function AIMealPlannerPage() {
                   <Card key={meal._id} className="border-none bg-slate-50 dark:bg-slate-900 hover:shadow-md transition-all group">
                     <CardContent className="p-0 overflow-hidden">
                       <div className="h-24 w-full relative">
-                        <img 
+                        <ImageWithSkeleton 
                           src={meal.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'} 
                           alt={meal.mealName}
+                          containerClassName="w-full h-full"
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end">
-                          <h4 className="font-bold text-white text-sm line-clamp-1">{meal.mealName}</h4>
-                          <span className="text-[10px] font-bold text-white/80 whitespace-nowrap ml-2">{meal.calories} kcal</span>
+                          <h4 className="font-bold text-white text-sm line-clamp-1 drop-shadow-sm">{meal.mealName}</h4>
+                          <span className="text-[10px] font-black text-white bg-primary/80 px-1.5 py-0.5 rounded backdrop-blur-sm whitespace-nowrap ml-2">
+                            {meal.calories} kcal
+                          </span>
                         </div>
                       </div>
                       <div className="p-3">

@@ -186,8 +186,7 @@ export function OnboardingPage() {
             health.weight !== '' &&
             health.age !== '' &&
             health.sex !== '' &&
-            health.activityLevel !== '' &&
-            health.dietaryRestrictions.length > 0
+            health.activityLevel !== ''
         );
     };
 
@@ -562,7 +561,7 @@ export function OnboardingPage() {
                                                 {!validateHealthStep() && (
                                                     <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
                                                         <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                                                        <span>Please fill in all health fields and select at least one dietary restriction.</span>
+                                                        <span>Please fill in all health fields. Dietary restrictions are optional.</span>
                                                     </div>
                                                 )}
                                                 <div className="flex justify-between items-center">

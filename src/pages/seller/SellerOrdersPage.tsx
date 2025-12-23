@@ -27,12 +27,12 @@ import {
 import { getImageUrl } from '@/config/api';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
-  confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800', icon: <CheckCircle className="h-4 w-4" /> },
-  preparing: { label: 'Preparing', color: 'bg-purple-100 text-purple-800', icon: <ChefHat className="h-4 w-4" /> },
-  ready: { label: 'Ready', color: 'bg-green-100 text-green-800', icon: <Package className="h-4 w-4" /> },
-  completed: { label: 'Completed', color: 'bg-gray-100 text-gray-800', icon: <CheckCircle className="h-4 w-4" /> },
-  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: <XCircle className="h-4 w-4" /> },
+  pending: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20', icon: <Clock className="h-4 w-4" /> },
+  confirmed: { label: 'Confirmed', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', icon: <CheckCircle className="h-4 w-4" /> },
+  preparing: { label: 'Preparing', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', icon: <ChefHat className="h-4 w-4" /> },
+  ready: { label: 'Ready', color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20', icon: <Package className="h-4 w-4" /> },
+  completed: { label: 'Completed', color: 'bg-muted text-muted-foreground border-border', icon: <CheckCircle className="h-4 w-4" /> },
+  cancelled: { label: 'Cancelled', color: 'bg-destructive/10 text-destructive border-destructive/20', icon: <XCircle className="h-4 w-4" /> },
 };
 
 const statusFlow = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
@@ -455,7 +455,7 @@ export function SellerOrdersPage() {
                               </p>
                             </div>
                           </div>
-                          <Badge className={`${status.color} gap-1`}>
+                          <Badge variant="outline" className={`${status.color} gap-1`}>
                             {status.icon}
                             {status.label}
                           </Badge>
@@ -508,12 +508,12 @@ export function SellerOrdersPage() {
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="text-xs text-muted-foreground">Status: </span>
                                   {order.isPaymentVerified ? (
-                                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 h-5 text-[10px] flex gap-1">
+                                    <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-500/20 bg-green-500/10 h-5 text-[10px] flex gap-1">
                                       <CheckCircle className="h-3 w-3" />
                                       Verified
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50 h-5 text-[10px]">
+                                    <Badge variant="outline" className="text-yellow-600 dark:text-yellow-400 border-yellow-500/20 bg-yellow-500/10 h-5 text-[10px]">
                                       Unverified
                                     </Badge>
                                   )}

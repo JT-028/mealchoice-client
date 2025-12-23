@@ -135,7 +135,7 @@ export function InventoryPage() {
 
   const getStockStatus = (product: Product) => {
     if (product.quantity === 0) return { label: 'Out of Stock', variant: 'destructive' as const, icon: XCircle };
-    if (product.quantity <= product.lowStockThreshold) return { label: 'Low Stock', variant: 'outline' as const, icon: AlertTriangle };
+    if (product.quantity <= product.lowStockThreshold) return { label: 'Low Stock', variant: 'outline' as const, icon: AlertTriangle, className: "text-yellow-600 dark:text-yellow-400 border-yellow-500/20 bg-yellow-500/10" };
     return { label: 'In Stock', variant: 'default' as const, icon: CheckCircle };
   };
 
@@ -208,9 +208,9 @@ export function InventoryPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <Package className="h-8 w-8 text-gray-400" />
+                <Package className="h-8 w-8 text-muted-foreground" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-500">{stats.unavailable}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.unavailable}</p>
                   <p className="text-sm text-muted-foreground">Unavailable</p>
                 </div>
               </div>
@@ -338,7 +338,7 @@ export function InventoryPage() {
                           />
                         </td>
                         <td className="p-3 text-center">
-                          <Badge variant={status.variant} className="gap-1">
+                          <Badge variant={status.variant} className={`gap-1 ${(status as any).className || ''}`}>
                             <StatusIcon className="h-3 w-3" />
                             {status.label}
                           </Badge>

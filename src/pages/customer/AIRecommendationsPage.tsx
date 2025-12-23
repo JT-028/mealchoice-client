@@ -114,7 +114,7 @@ export default function AIRecommendationsPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-xs font-semibold text-primary uppercase tracking-wider">AI Powered Predictions</span>
               </div>
-              <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6">
+              <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 text-foreground">
                 Personalized for <span className="text-primary">{user?.name}</span>
               </h1>
               <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed mb-8">
@@ -125,7 +125,7 @@ export default function AIRecommendationsPage() {
                 <Button 
                   onClick={fetchRecommendations} 
                   variant="outline" 
-                  className="gap-2 bg-background/50 backdrop-blur-md"
+                  className="gap-2 bg-background/50 backdrop-blur-md text-foreground"
                   disabled={loading}
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -136,15 +136,15 @@ export default function AIRecommendationsPage() {
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md px-4 py-2 rounded-xl border border-border">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium">Health Optimized</span>
+                  <span className="text-sm font-medium text-foreground">Health Optimized</span>
                 </div>
                 <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md px-4 py-2 rounded-xl border border-border">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium">Budget Friendly</span>
+                  <span className="text-sm font-medium text-foreground">Budget Friendly</span>
                 </div>
                 <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md px-4 py-2 rounded-xl border border-border">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium">Market Available</span>
+                  <span className="text-sm font-medium text-foreground">Market Available</span>
                 </div>
               </div>
             </div>

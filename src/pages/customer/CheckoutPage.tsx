@@ -242,10 +242,10 @@ export function CheckoutPage() {
     return (
       <CustomerLayout>
         <div className="max-w-md mx-auto text-center py-12">
-          <div className="h-20 w-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle className="h-10 w-10 text-green-600" />
+          <div className="h-20 w-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Order Placed Successfully!</h1>
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Order Placed Successfully!</h1>
           <p className="text-muted-foreground mb-6">
             Your order has been sent to the seller(s). You'll be notified when they confirm.
           </p>
@@ -322,11 +322,11 @@ export function CheckoutPage() {
                     <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
                       <RadioGroupItem value="cod" id={`cod-${sellerId}`} />
                       <Label htmlFor={`cod-${sellerId}`} className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                          <Banknote className="h-5 w-5 text-green-600" />
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Banknote className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">Cash on Delivery</p>
+                          <p className="font-medium text-foreground">Cash on Delivery</p>
                           <p className="text-xs text-muted-foreground">Pay when you receive your order</p>
                         </div>
                       </Label>
@@ -337,11 +337,11 @@ export function CheckoutPage() {
                       <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'qr' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
                         <RadioGroupItem value="qr" id={`qr-${sellerId}`} />
                         <Label htmlFor={`qr-${sellerId}`} className="flex items-center gap-3 cursor-pointer flex-1">
-                          <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                            <QrCode className="h-5 w-5 text-blue-600" />
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <QrCode className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="font-medium">QR Code Payment</p>
+                            <p className="font-medium text-foreground">QR Code Payment</p>
                             <p className="text-xs text-muted-foreground">Scan and pay via GCash/Maya</p>
                           </div>
                         </Label>

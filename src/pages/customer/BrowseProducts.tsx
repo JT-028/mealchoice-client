@@ -110,6 +110,7 @@ export function BrowseProducts() {
               variant={selectedMarket === null ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedMarket(null)}
+              className='text-foreground'
             >
               All Markets
             </Button>
@@ -117,6 +118,7 @@ export function BrowseProducts() {
               variant={selectedMarket === 'San Nicolas Market' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedMarket('San Nicolas Market')}
+              className="text-foreground"
             >
               <MapPin className="h-4 w-4 mr-1" />
               San Nicolas
@@ -125,6 +127,7 @@ export function BrowseProducts() {
               variant={selectedMarket === 'Pampanga Market' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedMarket('Pampanga Market')}
+              className="text-foreground"
             >
               <MapPin className="h-4 w-4 mr-1" />
               Pampanga

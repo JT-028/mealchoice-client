@@ -29,12 +29,12 @@ import {
 import { getImageUrl } from '@/config/api';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
-  confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800', icon: <CheckCircle className="h-4 w-4" /> },
-  preparing: { label: 'Preparing', color: 'bg-purple-100 text-purple-800', icon: <ChefHat className="h-4 w-4" /> },
-  ready: { label: 'Ready', color: 'bg-green-100 text-green-800', icon: <Package className="h-4 w-4" /> },
-  completed: { label: 'Completed', color: 'bg-gray-100 text-gray-800', icon: <CheckCircle className="h-4 w-4" /> },
-  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: <XCircle className="h-4 w-4" /> },
+  pending: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20', icon: <Clock className="h-4 w-4" /> },
+  confirmed: { label: 'Confirmed', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', icon: <CheckCircle className="h-4 w-4" /> },
+  preparing: { label: 'Preparing', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', icon: <ChefHat className="h-4 w-4" /> },
+  ready: { label: 'Ready', color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20', icon: <Package className="h-4 w-4" /> },
+  completed: { label: 'Completed', color: 'bg-muted text-muted-foreground border-border', icon: <CheckCircle className="h-4 w-4" /> },
+  cancelled: { label: 'Cancelled', color: 'bg-destructive/10 text-destructive border-destructive/20', icon: <XCircle className="h-4 w-4" /> },
 };
 
 type TabType = 'active' | 'completed' | 'cancelled';
@@ -166,7 +166,7 @@ export function OrdersPage() {
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <Badge className={`${status.color} gap-1`}>
+              <Badge variant="outline" className={`${status.color} gap-1`}>
                 {status.icon}
                 {status.label}
               </Badge>
@@ -263,7 +263,7 @@ export function OrdersPage() {
     return (
       <div className="text-center py-12 border rounded-lg border-dashed">
         <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">{messages[tab].title}</h3>
+        <h3 className="text-lg font-semibold mb-2 text-foreground">{messages[tab].title}</h3>
         <p className="text-muted-foreground">{messages[tab].desc}</p>
       </div>
     );

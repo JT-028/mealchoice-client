@@ -206,7 +206,7 @@ export function ProductsPage() {
       return <Badge variant="destructive">Out of Stock</Badge>;
     }
     if (product.quantity <= product.lowStockThreshold) {
-      return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Low Stock</Badge>;
+      return <Badge variant="outline" className="text-yellow-600 dark:text-yellow-400 border-yellow-500/20 bg-yellow-500/10">Low Stock</Badge>;
     }
     return <Badge variant="secondary">In Stock</Badge>;
   };
@@ -408,12 +408,12 @@ export function ProductsPage() {
                     <TableCell>{getStockBadge(product)}</TableCell>
                     <TableCell>
                       {product.isAvailable ? (
-                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                        <Badge variant="outline" className="text-primary border-primary/20 bg-primary/10">
                           <Eye className="h-3 w-3 mr-1" />
                           Visible
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-gray-500 border-gray-200 bg-gray-50">
+                        <Badge variant="outline" className="text-muted-foreground border-border bg-muted">
                           <EyeOff className="h-3 w-3 mr-1" />
                           Hidden
                         </Badge>

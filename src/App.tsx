@@ -6,6 +6,7 @@ import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from './components/ui/sonner';
 
 // Seller pages
 import { SellerDashboard } from './pages/seller/SellerDashboard';
@@ -63,6 +64,7 @@ function DashboardRedirect() {
 
 function App() {
   return (
+    <>
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
@@ -280,6 +282,8 @@ function App() {
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>
+      <Toaster position="top-right" richColors closeButton />
+    </>
   );
 }
 

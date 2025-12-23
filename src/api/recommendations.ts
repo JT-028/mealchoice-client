@@ -118,3 +118,29 @@ export const getSavedMeals = async (token: string): Promise<SavedMealsResponse> 
 
   return response.json();
 };
+
+export const deleteSavedMeal = async (token: string, mealId: string): Promise<{ success: boolean; message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/meals/${mealId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to delete meal');
+  }
+
+  return response.json();
+};
+
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner';
+
+export interface MealItem {
+  mealName: string;
+  calories: number;
+  description: string;
+  imageUrl?: string;
+}
+

@@ -18,7 +18,22 @@ import {
   type OperatingHours,
   type DayHours
 } from '@/api/settings';
+import {
+  exportBackupJSON,
+  exportBackupCSV,
+  importBackup
+} from '@/api/backup';
 import { getImageUrl } from '@/config/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   User,
   Lock,
@@ -30,7 +45,10 @@ import {
   Upload,
   Trash2,
   Clock,
-  MapPin
+  MapPin,
+  Download,
+  FileJson,
+  FileSpreadsheet
 } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
@@ -74,6 +92,11 @@ export function SellerSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [uploadingQR, setUploadingQR] = useState(false);
+  const [exportingJSON, setExportingJSON] = useState(false);
+  const [exportingCSV, setExportingCSV] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [restoreFile, setRestoreFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -240,6 +263,76 @@ export function SellerSettingsPage() {
     }
   };
 
+  const handleExportJSON = async () => {
+    if (!token) return;
+    setExportingJSON(true);
+    try {
+      const blob = await exportBackupJSON(token);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mealwise-seller-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      showMessage('success', 'Backup exported as JSON');
+    } catch {
+      showMessage('error', 'Error exporting backup');
+    } finally {
+      setExportingJSON(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!token) return;
+    setExportingCSV(true);
+    try {
+      const blob = await exportBackupCSV(token);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mealwise-seller-backup-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      showMessage('success', 'Backup exported as CSV');
+    } catch {
+      showMessage('error', 'Error exporting backup');
+    } finally {
+      setExportingCSV(false);
+    }
+  };
+
+  const handleRestoreFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'application/json') {
+      setRestoreFile(file);
+      setRestoreDialogOpen(true);
+    } else {
+      showMessage('error', 'Please select a valid JSON backup file');
+    }
+    e.target.value = '';
+  };
+
+  const handleRestore = async () => {
+    if (!token || !restoreFile) return;
+    setRestoring(true);
+    try {
+      const text = await restoreFile.text();
+      const backupData = JSON.parse(text);
+      const result = await importBackup(token, backupData);
+      showMessage('success', `Restored: ${result.restored.join(', ')}`);
+      setRestoreDialogOpen(false);
+      setRestoreFile(null);
+    } catch (err) {
+      showMessage('error', err instanceof Error ? err.message : 'Error restoring backup');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   if (loading) {
     return (
       <SellerLayout>
@@ -269,12 +362,13 @@ export function SellerSettingsPage() {
         )}
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="profile"><User className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="security"><Lock className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="store"><Store className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="notifications"><Bell className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="payment"><QrCode className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="data"><Download className="h-4 w-4" /></TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -534,7 +628,70 @@ export function SellerSettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Data Tab */}
+          <TabsContent value="data">
+            <Card>
+              <CardHeader>
+                <CardTitle>Backup & Restore</CardTitle>
+                <CardDescription>Export all your data or restore from a previous backup</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Export Backup</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleExportJSON} disabled={exportingJSON} variant="outline">
+                      {exportingJSON ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileJson className="h-4 w-4 mr-2" />}
+                      Export JSON
+                    </Button>
+                    <Button onClick={handleExportCSV} disabled={exportingCSV} variant="outline">
+                      {exportingCSV ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                      Export CSV
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">JSON for restoring, CSV for spreadsheets</p>
+                </div>
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-2">Restore from Backup</h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleRestoreFileSelect}
+                      className="hidden"
+                      id="seller-restore-file"
+                    />
+                    <Button variant="outline" asChild>
+                      <label htmlFor="seller-restore-file" className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import JSON Backup
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Restore Backup Dialog */}
+        <AlertDialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Restore from Backup</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will restore your products and store settings from: <strong>{restoreFile?.name}</strong>. Existing products with the same names will not be duplicated.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={restoring} onClick={() => setRestoreFile(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRestore} disabled={restoring}>
+                {restoring ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                Restore
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SellerLayout>
   );

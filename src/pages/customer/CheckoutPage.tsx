@@ -7,11 +7,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createOrder } from '@/api/orders';
 import { getSellersInfo } from '@/api/settings';
 import { getSavedAddresses, type Address } from '@/api/addresses';
+import { getSpending, type Spending } from '@/api/budget';
 import {
   ShoppingBag,
   ArrowLeft,
@@ -23,7 +34,8 @@ import {
   Store,
   Truck,
   MapPin,
-  Plus
+  Plus,
+  Wallet
 } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
 
@@ -42,6 +54,10 @@ export function CheckoutPage() {
   const [sellersInfo, setSellersInfo] = useState<Record<string, { paymentQR?: string }>>({});
   const [receipts, setReceipts] = useState<Record<string, File>>({});
   const [paymentMethods, setPaymentMethods] = useState<Record<string, PaymentMethod>>({});
+  
+  // Budget validation
+  const [spending, setSpending] = useState<Spending | null>(null);
+  const [showBudgetConfirm, setShowBudgetConfirm] = useState(false);
   
   // Delivery options
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
@@ -137,6 +153,22 @@ export function CheckoutPage() {
     fetchAddresses();
   }, [token, deliveryType]);
 
+  // Fetch spending data for budget validation
+  useEffect(() => {
+    const fetchSpending = async () => {
+      if (!token) return;
+      try {
+        const response = await getSpending(token);
+        if (response.success && response.spending) {
+          setSpending(response.spending);
+        }
+      } catch (err) {
+        console.error('Failed to fetch spending data:', err);
+      }
+    };
+    fetchSpending();
+  }, [token]);
+
   const handleFileChange = (sellerId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setReceipts(prev => ({
@@ -161,7 +193,23 @@ export function CheckoutPage() {
     }
   };
 
+  // Check if order exceeds remaining budget
+  const exceedsDailyBudget = spending ? totalPrice > spending.dailyRemaining : false;
+  const exceedsWeeklyBudget = spending ? totalPrice > spending.weeklyRemaining : false;
+  const exceedsBudget = exceedsDailyBudget || exceedsWeeklyBudget;
+
+  const handleConfirmOrder = () => {
+    // If over budget, show confirmation dialog first
+    if (exceedsBudget) {
+      setShowBudgetConfirm(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
   const handleSubmit = async () => {
+    setShowBudgetConfirm(false);
+    
     if (!token) {
       setError('Please log in to place an order');
       return;
@@ -277,6 +325,40 @@ export function CheckoutPage() {
           <div className="flex items-center gap-2 p-4 text-destructive bg-destructive/10 rounded-lg">
             <AlertTriangle className="h-5 w-5" />
             {error}
+          </div>
+        )}
+
+        {/* Budget Warning Banner */}
+        {spending && exceedsBudget && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <Wallet className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-700 dark:text-amber-300">Order Exceeds Budget</h3>
+                <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                  This order of <strong>₱{totalPrice.toFixed(2)}</strong> will exceed your remaining budget:
+                </p>
+                <ul className="text-sm text-amber-600 dark:text-amber-400 mt-2 space-y-1">
+                  {exceedsDailyBudget && (
+                    <li>
+                      • Daily: ₱{spending.dailyRemaining.toFixed(2)} remaining of ₱{spending.dailyLimit.toFixed(2)}
+                      <span className="font-medium"> (₱{(totalPrice - spending.dailyRemaining).toFixed(2)} over)</span>
+                    </li>
+                  )}
+                  {exceedsWeeklyBudget && (
+                    <li>
+                      • Weekly: ₱{spending.weeklyRemaining.toFixed(2)} remaining of ₱{spending.weeklyLimit.toFixed(2)}
+                      <span className="font-medium"> (₱{(totalPrice - spending.weeklyRemaining).toFixed(2)} over)</span>
+                    </li>
+                  )}
+                </ul>
+                <p className="text-xs text-amber-500 mt-2">
+                  You can still proceed, but you'll be asked to confirm.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -559,13 +641,18 @@ export function CheckoutPage() {
             <Button
               className="w-full"
               size="lg"
-              onClick={handleSubmit}
+              onClick={handleConfirmOrder}
               disabled={loading}
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Placing Order...
+                </>
+              ) : exceedsBudget ? (
+                <>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Confirm Order (Exceeds Budget)
                 </>
               ) : (
                 'Confirm Order'
@@ -580,6 +667,48 @@ export function CheckoutPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Budget Confirmation Dialog */}
+      <AlertDialog open={showBudgetConfirm} onOpenChange={setShowBudgetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Order Exceeds Budget
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left space-y-2">
+              <p>
+                This order of <strong>₱{totalPrice.toFixed(2)}</strong> will put you over your budget:
+              </p>
+              {spending && (
+                <ul className="list-disc pl-5 space-y-1">
+                  {exceedsDailyBudget && (
+                    <li>
+                      Daily budget: ₱{spending.dailyRemaining.toFixed(2)} remaining → 
+                      <span className="text-destructive font-medium"> ₱{(totalPrice - spending.dailyRemaining).toFixed(2)} over</span>
+                    </li>
+                  )}
+                  {exceedsWeeklyBudget && (
+                    <li>
+                      Weekly budget: ₱{spending.weeklyRemaining.toFixed(2)} remaining → 
+                      <span className="text-destructive font-medium"> ₱{(totalPrice - spending.weeklyRemaining).toFixed(2)} over</span>
+                    </li>
+                  )}
+                </ul>
+              )}
+              <p className="pt-2">
+                Are you sure you want to proceed with this order?
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmit} className="bg-amber-600 hover:bg-amber-700">
+              Place Order Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CustomerLayout>
   );
 }

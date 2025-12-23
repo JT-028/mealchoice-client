@@ -79,9 +79,9 @@ export function Header() {
                 <span className="text-xs text-muted-foreground capitalize">({user.role})</span>
               </div>
               <Button variant="ghost" asChild>
-                <Link to="/dashboard">Dashboard</Link>
+                <Link to="/dashboard" className="text-foreground">Dashboard</Link>
               </Button>
-              <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <Button variant="outline" onClick={handleLogout} className="gap-2 text-muted-foreground">
                 <LogOut className="h-4 w-4" />
                 Logout
               </Button>

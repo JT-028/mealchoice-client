@@ -81,7 +81,7 @@ export function LandingPage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-lg px-8">
-                <Link to="/login">I'm a Seller</Link>
+                <Link to="/login" className='text-muted-foreground'>I'm a Seller</Link>
               </Button>
             </div>
 
@@ -209,7 +209,7 @@ export function LandingPage() {
               <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                 1
               </div>
-              <h3 className="text-xl font-semibold mb-2">Set Your Budget</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Set Your Budget</h3>
               <p className="text-muted-foreground">
                 Tell us your daily or weekly food budget and dietary preferences.
               </p>
@@ -219,7 +219,7 @@ export function LandingPage() {
               <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                 2
               </div>
-              <h3 className="text-xl font-semibold mb-2">Get Meal Plans</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Get Meal Plans</h3>
               <p className="text-muted-foreground">
                 Receive AI-powered meal suggestions that fit your budget and health goals.
               </p>
@@ -229,7 +229,7 @@ export function LandingPage() {
               <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                 3
               </div>
-              <h3 className="text-xl font-semibold mb-2">Order & Enjoy</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Order & Enjoy</h3>
               <p className="text-muted-foreground">
                 Order ingredients from local markets with pickup or delivery options.
               </p>
@@ -353,7 +353,7 @@ export function LandingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="text-lg px-8">
+            <Button size="lg" variant="outline" asChild className="text-lg px-8 text-foreground">
               <Link to="/login">Sign In</Link>
             </Button>
           </div>

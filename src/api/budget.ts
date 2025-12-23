@@ -15,6 +15,22 @@ export interface BudgetResponse {
   budget?: Budget;
 }
 
+export interface Spending {
+  todaySpent: number;
+  weeklySpent: number;
+  dailyLimit: number;
+  weeklyLimit: number;
+  dailyRemaining: number;
+  weeklyRemaining: number;
+  alertThreshold: number;
+}
+
+export interface SpendingResponse {
+  success: boolean;
+  message?: string;
+  spending?: Spending;
+}
+
 // Get user's budget
 export async function getBudget(token: string): Promise<BudgetResponse> {
   const response = await fetch(`${API_BASE_URL}/budget`, {
@@ -37,6 +53,16 @@ export async function updateBudget(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
+  });
+  return response.json();
+}
+
+// Get user's spending summary
+export async function getSpending(token: string): Promise<SpendingResponse> {
+  const response = await fetch(`${API_BASE_URL}/budget/spending`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
   });
   return response.json();
 }

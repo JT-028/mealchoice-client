@@ -35,6 +35,7 @@ import { PendingAccountsPage } from './pages/admin/PendingAccountsPage';
 import { SellersPage } from './pages/admin/SellersPage';
 import { AdminsPage } from './pages/admin/AdminsPage';
 import { CustomersPage } from './pages/admin/CustomersPage';
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 
 // Component to redirect users to their role-specific dashboard
@@ -131,9 +132,7 @@ function App() {
                 path="/admin/settings"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <div className="p-8 text-center text-muted-foreground">
-                      Admin settings coming soon...
-                    </div>
+                    <AdminSettingsPage />
                   </ProtectedRoute>
                 }
               />

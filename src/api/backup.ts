@@ -1,8 +1,8 @@
 import { API_BASE_URL } from '@/config/api';
 
-// Export backup as JSON
+// Export full database backup as JSON (Admin only)
 export const exportBackupJSON = async (token: string): Promise<Blob> => {
-  const response = await fetch(`${API_BASE_URL}/settings/backup/json`, {
+  const response = await fetch(`${API_BASE_URL}/admin/backup/json`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -15,9 +15,9 @@ export const exportBackupJSON = async (token: string): Promise<Blob> => {
   return response.blob();
 };
 
-// Export backup as CSV
+// Export full database backup as CSV (Admin only)
 export const exportBackupCSV = async (token: string): Promise<Blob> => {
-  const response = await fetch(`${API_BASE_URL}/settings/backup/csv`, {
+  const response = await fetch(`${API_BASE_URL}/admin/backup/csv`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -30,13 +30,14 @@ export const exportBackupCSV = async (token: string): Promise<Blob> => {
   return response.blob();
 };
 
-// Import backup from JSON file
+// Import and restore database from JSON backup (Admin only)
 export const importBackup = async (token: string, backupData: object): Promise<{
   message: string;
   restored: string[];
   errors: string[];
+  skipped?: string[];
 }> => {
-  const response = await fetch(`${API_BASE_URL}/settings/restore`, {
+  const response = await fetch(`${API_BASE_URL}/admin/restore`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

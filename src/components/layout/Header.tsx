@@ -89,10 +89,10 @@ export function Header() {
           ) : (
             <>
               <Button variant="ghost" asChild>
-                <Link to="/login">Log In</Link>
+                <Link to="/login" className="text-foreground">Log In</Link>
               </Button>
               <Button asChild>
-                <Link to="/register">Get Started</Link>
+                <Link to="/register" className="text-foreground">Get Started</Link>
               </Button>
             </>
           )}

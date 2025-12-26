@@ -8,6 +8,7 @@ export interface User {
   marketLocation?: string;
   isVerified?: boolean;
   hasCompletedOnboarding?: boolean;
+  theme?: 'light' | 'dark' | 'system';
 }
 
 export interface AuthResponse {

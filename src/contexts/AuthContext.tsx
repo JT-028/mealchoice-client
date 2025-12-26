@@ -21,6 +21,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper function to apply theme
+  const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+    const root = document.documentElement;
+    if (theme === 'system') {
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('dark', systemDark);
+    } else {
+      root.classList.toggle('dark', theme === 'dark');
+    }
+  };
+
   // Load auth state from localStorage on mount
   useEffect(() => {
     const loadAuthState = async () => {
@@ -41,6 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setToken(storedToken);
             setUser(response.user);
             console.log('[AuthContext] User set from API:', response.user);
+            
+            // Apply saved theme from user settings
+            if (response.user.theme) {
+              applyTheme(response.user.theme);
+              console.log('[AuthContext] Applied theme:', response.user.theme);
+            }
           } else {
             // Token is invalid, clear storage
             localStorage.removeItem(TOKEN_KEY);

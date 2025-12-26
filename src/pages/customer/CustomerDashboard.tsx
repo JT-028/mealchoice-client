@@ -227,7 +227,7 @@ export function CustomerDashboard() {
                       <ShoppingBag className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-semibold">Pampanga Market</h4>
+                      <h4 className="font-semibold">Pampang Public Market</h4>
                       <p className="text-sm text-muted-foreground">Local specialties</p>
                     </div>
                     <Badge variant="secondary" className="ml-auto">Open</Badge>

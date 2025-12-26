@@ -46,7 +46,7 @@ export function Footer() {
             <h4 className="font-semibold text-foreground mb-4">Markets</h4>
             <ul className="space-y-2">
               <li className="text-sm text-muted-foreground">San Nicolas Market</li>
-              <li className="text-sm text-muted-foreground">Pampanga Market</li>
+              <li className="text-sm text-muted-foreground">Pampang Public Market</li>
             </ul>
           </div>
 

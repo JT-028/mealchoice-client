@@ -12,12 +12,36 @@ import {
   Loader2,
   Check,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  ShoppingCart,
+  AlertCircle,
+  Search,
+  Store
 } from 'lucide-react';
 import { 
   type MealPlanResponse
 } from '@/api/recommendations';
+import { getAllProducts, type Product } from '@/api/products';
+import { useCart } from '@/contexts/CartContext';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface GroceryItem {
   name: string;
@@ -71,6 +95,15 @@ export default function GroceriesPage() {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<MealPlanResponse['data'] | null>(null);
   const [groceries, setGroceries] = useState<GroceryItem[]>([]);
+  
+  // Product search state
+  const [searchingProduct, setSearchingProduct] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<GroceryItem | null>(null);
+  const [matchingProducts, setMatchingProducts] = useState<Product[]>([]);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [notFoundDialogOpen, setNotFoundDialogOpen] = useState(false);
+  
+  const { addItem } = useCart();
 
   const loadPlan = useCallback(() => {
     setLoading(true);
@@ -110,10 +143,47 @@ export default function GroceriesPage() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [loadPlan]);
 
-  const toggleItem = (index: number) => {
+  const handleCheckIngredient = async (item: GroceryItem, index: number) => {
+    // If already checked, just toggle off
+    if (item.checked) {
+      toggleItemChecked(index, false);
+      return;
+    }
+    
+    // Search for matching products
+    setSelectedIngredient(item);
+    setSearchingProduct(true);
+    
+    try {
+      const response = await getAllProducts({ search: item.name });
+      
+      if (response.success && response.products && response.products.length > 0) {
+        // Filter to only available products
+        const availableProducts = response.products.filter(p => p.isAvailable && p.quantity > 0);
+        
+        if (availableProducts.length > 0) {
+          setMatchingProducts(availableProducts);
+          setProductDialogOpen(true);
+        } else {
+          // Products exist but none available
+          setNotFoundDialogOpen(true);
+        }
+      } else {
+        // No products found at all
+        setNotFoundDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error searching products:', error);
+      setNotFoundDialogOpen(true);
+    } finally {
+      setSearchingProduct(false);
+    }
+  };
+
+  const toggleItemChecked = (index: number, checked: boolean) => {
     setGroceries(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], checked: !updated[index].checked };
+      updated[index] = { ...updated[index], checked };
       
       // Save checked state to localStorage
       const checkedMap: Record<string, boolean> = {};
@@ -124,6 +194,26 @@ export default function GroceriesPage() {
       
       return updated;
     });
+  };
+
+  const handleAddToCart = (product: Product) => {
+    addItem(product, 1);
+    toast.success(`${product.name} added to cart`);
+    
+    // Mark the ingredient as checked
+    const index = groceries.findIndex(g => g.name.toLowerCase() === selectedIngredient?.name.toLowerCase());
+    if (index !== -1) {
+      toggleItemChecked(index, true);
+    }
+    
+    setProductDialogOpen(false);
+    setSelectedIngredient(null);
+    setMatchingProducts([]);
+  };
+
+  const handleNotFoundClose = () => {
+    setNotFoundDialogOpen(false);
+    setSelectedIngredient(null);
   };
 
   const clearAllChecks = () => {
@@ -156,7 +246,7 @@ export default function GroceriesPage() {
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">AI Generated</span>
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Grocery List</h1>
-            <p className="text-muted-foreground mt-2">All ingredients from your weekly meal plan.</p>
+            <p className="text-muted-foreground mt-2">Click an ingredient to find it in our partner markets.</p>
           </div>
           {groceries.length > 0 && (
             <Button 
@@ -212,27 +302,36 @@ export default function GroceriesPage() {
                         "flex items-center gap-4 px-6 py-4 transition-colors cursor-pointer hover:bg-muted/50",
                         item.checked && "bg-green-50 dark:bg-green-950/20"
                       )}
-                      onClick={() => toggleItem(index)}
+                      onClick={() => handleCheckIngredient(item, index)}
                     >
                       <Checkbox 
                         checked={item.checked}
-                        onCheckedChange={() => toggleItem(index)}
+                        onCheckedChange={() => handleCheckIngredient(item, index)}
                         className="h-5 w-5"
+                        disabled={searchingProduct && selectedIngredient?.name === item.name}
                       />
                       <div className="flex-1 min-w-0">
                         <p className={cn(
-                          "font-medium transition-all",
+                          "font-medium transition-all flex items-center gap-2",
                           item.checked && "line-through text-muted-foreground"
                         )}>
                           {item.name}
+                          {searchingProduct && selectedIngredient?.name === item.name && (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           Used in: {item.meals.slice(0, 3).join(', ')}{item.meals.length > 3 ? ` +${item.meals.length - 3} more` : ''}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="shrink-0">
-                        ×{item.count}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="shrink-0">
+                          ×{item.count}
+                        </Badge>
+                        {!item.checked && (
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -262,6 +361,86 @@ export default function GroceriesPage() {
           </div>
         )}
       </div>
+
+      {/* Product Selection Dialog */}
+      <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5 text-primary" />
+              Products matching "{selectedIngredient?.name}"
+            </DialogTitle>
+            <DialogDescription>
+              Found {matchingProducts.length} product(s) in our partner markets. Click to add to cart.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto py-4 space-y-3">
+            {matchingProducts.map(product => {
+              const seller = typeof product.seller === 'object' ? product.seller : null;
+              return (
+                <div 
+                  key={product._id}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => handleAddToCart(product)}
+                >
+                  {product.image ? (
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="h-16 w-16 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
+                      <ShoppingBasket className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {seller?.name || 'Seller'} • {product.marketLocation}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary">₱{product.price}/{product.unit}</Badge>
+                      <Badge variant="outline">{product.quantity} available</Badge>
+                    </div>
+                  </div>
+                  <Button size="sm" className="shrink-0 gap-1">
+                    <ShoppingCart className="h-4 w-4" />
+                    Add
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProductDialogOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Not Found Alert Dialog */}
+      <AlertDialog open={notFoundDialogOpen} onOpenChange={setNotFoundDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Ingredient Not Available
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Sorry, we couldn't find <strong>"{selectedIngredient?.name}"</strong> in any of our partner markets right now.
+              <br /><br />
+              You may need to purchase this ingredient from another store.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleNotFoundClose}>
+              I Understand
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CustomerLayout>
   );
 }

@@ -18,7 +18,8 @@ import {
   Beef,
   Wheat,
   Droplets,
-  X
+  X,
+  List
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -86,6 +87,11 @@ export default function AIMealPlannerPage() {
   const [selectedMealForSlot, setSelectedMealForSlot] = useState<SavedMeal | null>(null);
   const [mealToDelete, setMealToDelete] = useState<SavedMeal | null>(null);
   const [deletingMealId, setDeletingMealId] = useState<string | null>(null);
+  
+  // Ingredients modal state
+  const [ingredientsDialogOpen, setIngredientsDialogOpen] = useState(false);
+  const [selectedMealForIngredients, setSelectedMealForIngredients] = useState<MealItem | null>(null);
+  const [selectedMealSlot, setSelectedMealSlot] = useState<string>('');
   
   const dayNavRef = useRef<HTMLDivElement>(null);
 
@@ -219,7 +225,11 @@ export default function AIMealPlannerPage() {
     }
   };
 
-
+  const handleViewIngredients = (meal: MealItem, slot: string) => {
+    setSelectedMealForIngredients(meal);
+    setSelectedMealSlot(slot);
+    setIngredientsDialogOpen(true);
+  };
 
   // Calculate progress and per-day macros
   const getPlannedDaysCount = () => {
@@ -373,6 +383,15 @@ export default function AIMealPlannerPage() {
                                 <CheckCircle2 className="h-4 w-4" />
                                 Personalized Choice
                               </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="gap-2"
+                                onClick={() => handleViewIngredients(meal, mealType)}
+                              >
+                                <List className="h-4 w-4" />
+                                View Ingredients
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -555,6 +574,44 @@ export default function AIMealPlannerPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Ingredients Modal */}
+      <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <List className="h-5 w-5 text-primary" />
+              {selectedMealForIngredients?.mealName}
+            </DialogTitle>
+            <DialogDescription>
+              Ingredients for {selectedMealSlot} • {selectedMealForIngredients?.calories} kcal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedMealForIngredients?.ingredients && selectedMealForIngredients.ingredients.length > 0 ? (
+              <ul className="space-y-2">
+                {selectedMealForIngredients.ingredients.map((ingredient, index) => (
+                  <li key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <span className="capitalize">{ingredient}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <List className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p>No ingredients available for this meal.</p>
+                <p className="text-sm mt-1">Try regenerating your meal plan to get ingredient data.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIngredientsDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </CustomerLayout>
   );
 }

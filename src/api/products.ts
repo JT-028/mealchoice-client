@@ -189,7 +189,7 @@ export const PRODUCT_UNITS = [
 // Market locations
 export const MARKET_LOCATIONS = [
   { value: 'San Nicolas Market', label: 'San Nicolas Market' },
-  { value: 'Pampanga Market', label: 'Pampanga Market' },
+  { value: 'Pampang Public Market', label: 'Pampang Public Market' },
 ];
 
 // Bulk delete products

@@ -145,7 +145,7 @@ export function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-green-500" />
-                      <span>Pampanga Market</span>
+                      <span>Pampang Public Market</span>
                     </div>
                     <Badge variant="secondary">{stats.sellersByMarket.pampanga}</Badge>
                   </div>

@@ -88,9 +88,9 @@ export function BudgetSettings() {
     }
   };
 
-  // Mock spending (will be real later)
-  const todaySpent = 185;
-  const weeklySpent = 1250;
+  // Actual spending - will be calculated from completed orders when API is implemented
+  const todaySpent = 0;
+  const weeklySpent = 0;
 
   return (
     <CustomerLayout>

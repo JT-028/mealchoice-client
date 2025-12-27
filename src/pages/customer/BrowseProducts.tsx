@@ -124,9 +124,9 @@ export function BrowseProducts() {
               San Nicolas
             </Button>
             <Button
-              variant={selectedMarket === 'Pampanga Market' ? 'default' : 'outline'}
+              variant={selectedMarket === 'Pampang Public Market' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSelectedMarket('Pampanga Market')}
+              onClick={() => setSelectedMarket('Pampang Public Market')}
               className="text-foreground"
             >
               <MapPin className="h-4 w-4 mr-1" />

@@ -239,7 +239,7 @@ export function SellersPage() {
             <SelectContent>
               <SelectItem value="all">All Markets</SelectItem>
               <SelectItem value="San Nicolas Market">San Nicolas Market</SelectItem>
-              <SelectItem value="Pampanga Market">Pampanga Market</SelectItem>
+              <SelectItem value="Pampang Public Market">Pampang Public Market</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -396,7 +396,7 @@ export function SellersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="San Nicolas Market">San Nicolas Market</SelectItem>
-                    <SelectItem value="Pampanga Market">Pampanga Market</SelectItem>
+                    <SelectItem value="Pampang Public Market">Pampang Public Market</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -506,7 +506,7 @@ export function SellersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="San Nicolas Market">San Nicolas Market</SelectItem>
-                    <SelectItem value="Pampanga Market">Pampanga Market</SelectItem>
+                    <SelectItem value="Pampang Public Market">Pampang Public Market</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

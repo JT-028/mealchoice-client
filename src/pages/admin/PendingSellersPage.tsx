@@ -211,10 +211,10 @@ export function PendingSellersPage() {
                         San Nicolas Market
                       </div>
                     </SelectItem>
-                    <SelectItem value="Pampanga Market">
+                    <SelectItem value="Pampang Public Market">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        Pampanga Market
+                        Pampang Public Market
                       </div>
                     </SelectItem>
                   </SelectContent>

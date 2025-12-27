@@ -58,7 +58,7 @@ const cuisineOptions = ['Filipino', 'Asian', 'Western', 'Mediterranean', 'Indian
 
 export function CustomerSettingsPage() {
   const navigate = useNavigate();
-  const { token, logout } = useAuth();
+  const { token, logout, updateUser } = useAuth();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -113,7 +113,7 @@ export function CustomerSettingsPage() {
           setSettings(response.settings);
           setName(response.settings.name);
           setSelectedTheme(response.settings.theme);
-          applyTheme(response.settings.theme);
+          updateUser({ theme: response.settings.theme });
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -226,16 +226,6 @@ export function CustomerSettingsPage() {
     }
   };
 
-  const applyTheme = (theme: 'light' | 'dark' | 'system') => {
-    const root = document.documentElement;
-    if (theme === 'system') {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', systemDark);
-    } else {
-      root.classList.toggle('dark', theme === 'dark');
-    }
-  };
-
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
@@ -289,7 +279,9 @@ export function CustomerSettingsPage() {
   const handleThemeChange = async (theme: 'light' | 'dark' | 'system') => {
     if (!token) return;
     setSelectedTheme(theme);
-    applyTheme(theme);
+    // updateTheme is the backend call
+    // updateUser is the local state/localStorage call in AuthContext
+    updateUser({ theme });
     try {
       await updateTheme(token, theme);
     } catch (error) {

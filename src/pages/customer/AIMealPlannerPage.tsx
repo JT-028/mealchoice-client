@@ -189,7 +189,8 @@ export default function AIMealPlannerPage() {
         mealName: selectedMealForSlot.mealName, 
         calories: selectedMealForSlot.calories, 
         description: selectedMealForSlot.description, 
-        imageUrl: selectedMealForSlot.imageUrl 
+        imageUrl: selectedMealForSlot.imageUrl,
+        ingredients: selectedMealForSlot.ingredients
       };
       
       setPlan(newPlan);
@@ -224,21 +225,15 @@ export default function AIMealPlannerPage() {
       setMealToDelete(null);
     }
   };
-
+  
   const handleViewIngredients = (meal: MealItem, slot: string) => {
     setSelectedMealForIngredients(meal);
     setSelectedMealSlot(slot);
     setIngredientsDialogOpen(true);
   };
 
-  // Calculate progress and per-day macros
-  const getPlannedDaysCount = () => {
-    if (!plan) return 0;
-    return Object.values(plan.weekPlan).filter(day => 
-      day && day.breakfast.mealName && day.lunch.mealName && day.dinner.mealName
-    ).length;
-  };
 
+  // Calculate per-day macros
   const getDayMacros = (day: string) => {
     if (!plan) return null;
     const dayPlan = plan.weekPlan[day];
@@ -258,7 +253,6 @@ export default function AIMealPlannerPage() {
     );
   }
 
-  const plannedDays = getPlannedDaysCount();
   const dayMacros = getDayMacros(activeDay);
 
   return (
@@ -296,13 +290,12 @@ export default function AIMealPlannerPage() {
             {plan ? (
               <>
                 {/* Weekly Stats Bar with Icons */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: 'Avg Calories', value: plan.weeklyMacros.avgCalories, unit: 'kcal', icon: Flame, color: 'text-orange-500' },
                     { label: 'Protein', value: plan.weeklyMacros.avgProtein, unit: '', icon: Beef, color: 'text-red-500' },
                     { label: 'Carbs', value: plan.weeklyMacros.avgCarbs, unit: '', icon: Wheat, color: 'text-amber-500' },
                     { label: 'Fats', value: plan.weeklyMacros.avgFats, unit: '', icon: Droplets, color: 'text-blue-500' },
-                    { label: 'Progress', value: `${plannedDays}/7`, unit: 'days', icon: CheckCircle2, color: 'text-green-500' },
                   ].map((stat, i) => (
                     <Card key={i} className="border-none shadow-sm">
                       <CardContent className="p-4">

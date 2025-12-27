@@ -9,8 +9,15 @@ export interface Recommendation {
     carbs: string;
     fats: string;
   };
+  nutrition?: {
+    fiber: string;
+    sodium: string;
+    sugar: string;
+  };
   estimatedCost: number;
   ingredients: string[];
+  healthBenefits?: string[];
+  instructions?: string[];
   imageUrl?: string;
 }
 

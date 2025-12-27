@@ -31,9 +31,9 @@ export interface RecommendationResponse {
 }
 
 export interface MealPlanDay {
-  breakfast: { mealName: string; calories: number; description: string; imageUrl?: string };
-  lunch: { mealName: string; calories: number; description: string; imageUrl?: string };
-  dinner: { mealName: string; calories: number; description: string; imageUrl?: string };
+  breakfast: { mealName: string; calories: number; description: string; imageUrl?: string; ingredients?: string[] };
+  lunch: { mealName: string; calories: number; description: string; imageUrl?: string; ingredients?: string[] };
+  dinner: { mealName: string; calories: number; description: string; imageUrl?: string; ingredients?: string[] };
 }
 
 export interface MealPlanResponse {
@@ -149,5 +149,52 @@ export interface MealItem {
   calories: number;
   description: string;
   imageUrl?: string;
+  ingredients?: string[];
 }
 
+export interface GroceryItem {
+  name: string;
+  meals: string[];
+  count: number;
+}
+
+// Helper function to aggregate groceries from a meal plan
+export const aggregateGroceries = (weekPlan: { [key: string]: MealPlanDay }): GroceryItem[] => {
+  const groceryMap = new Map<string, { meals: Set<string>; count: number }>();
+  
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const slots: ('breakfast' | 'lunch' | 'dinner')[] = ['breakfast', 'lunch', 'dinner'];
+  
+  days.forEach(day => {
+    const dayPlan = weekPlan[day];
+    if (!dayPlan) return;
+    
+    slots.forEach(slot => {
+      const meal = dayPlan[slot];
+      if (!meal?.ingredients) return;
+      
+      meal.ingredients.forEach(ingredient => {
+        const normalizedName = ingredient.toLowerCase().trim();
+        const existing = groceryMap.get(normalizedName);
+        
+        if (existing) {
+          existing.meals.add(`${day} ${slot}`);
+          existing.count++;
+        } else {
+          groceryMap.set(normalizedName, {
+            meals: new Set([`${day} ${slot}`]),
+            count: 1
+          });
+        }
+      });
+    });
+  });
+  
+  return Array.from(groceryMap.entries())
+    .map(([name, data]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      meals: Array.from(data.meals),
+      count: data.count
+    }))
+    .sort((a, b) => b.count - a.count);
+};

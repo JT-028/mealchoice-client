@@ -28,7 +28,8 @@ import {
   ChevronRight,
   MessageSquare,
   Sparkles,
-  Calendar
+  Calendar,
+  ShoppingBasket
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -42,6 +43,7 @@ const navItems = [
   { href: '/customer/browse', label: 'Browse Products', icon: ShoppingBag },
   { href: '/customer/ai-recommendations', label: 'AI Recommendations', icon: Sparkles },
   { href: '/customer/ai-meal-planner', label: 'AI Meal Planner', icon: Calendar },
+  { href: '/customer/groceries', label: 'Groceries', icon: ShoppingBasket },
   { href: '/customer/cart', label: 'Cart', icon: ShoppingCart },
   { href: '/customer/orders', label: 'My Orders', icon: Package },
   { href: '/customer/messages', label: 'Messages', icon: MessageSquare },

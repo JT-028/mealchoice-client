@@ -28,6 +28,7 @@ import { CustomerSettingsPage } from './pages/customer/CustomerSettingsPage';
 import { OnboardingPage } from './pages/customer/OnboardingPage';
 import AIRecommendationsPage from './pages/customer/AIRecommendationsPage';
 import AIMealPlannerPage from './pages/customer/AIMealPlannerPage';
+import GroceriesPage from './pages/customer/GroceriesPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -207,6 +208,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['customer']}>
                     <AIRecommendationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/customer/groceries"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <GroceriesPage />
                   </ProtectedRoute>
                 }
               />

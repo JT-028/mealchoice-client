@@ -15,6 +15,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = 'mealchoice_token';
 const USER_KEY = 'mealchoice_user';
+const THEME_KEY = 'mealwise_theme';
+
+const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+  const root = document.documentElement;
+  if (theme === 'system') {
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.classList.toggle('dark', systemDark);
+  } else {
+    root.classList.toggle('dark', theme === 'dark');
+  }
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,6 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (response.success && response.user) {
             setToken(storedToken);
             setUser(response.user);
+            
+            // Sync theme from profile
+            if (response.user.theme) {
+              localStorage.setItem(THEME_KEY, response.user.theme);
+              applyTheme(response.user.theme);
+            }
+            
             console.log('[AuthContext] User set from API:', response.user);
           } else {
             // Token is invalid, clear storage
@@ -66,6 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     localStorage.setItem(TOKEN_KEY, newToken);
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+    
+    // Sync theme on login
+    if (newUser.theme) {
+      localStorage.setItem(THEME_KEY, newUser.theme);
+      applyTheme(newUser.theme);
+    }
   };
 
   const logout = () => {
@@ -86,6 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AuthContext] Updated user:', updatedUser);
       setUser(updatedUser);
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+
+      // Apply theme if it was updated
+      if (updates.theme) {
+        localStorage.setItem(THEME_KEY, updates.theme);
+        applyTheme(updates.theme);
+      }
     }
   };
 

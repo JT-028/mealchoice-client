@@ -221,7 +221,7 @@ export function OnboardingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10">
+        <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10 dark:from-background dark:via-background dark:to-background text-foreground">
             <AnimatePresence mode="wait">
                 {isCompleted ? (
                     <motion.div

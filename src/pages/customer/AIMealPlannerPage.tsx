@@ -404,11 +404,11 @@ export default function AIMealPlannerPage() {
                 </Card>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-950/50 rounded-3xl border-2 border-dashed">
+              <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-950/50 rounded-3xl border-2 border-dashed dark:border-white/20">
                 <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                   <Calendar className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">No plan generated yet</h3>
+                <h3 className="text-2xl font-bold text-foreground">No plan generated yet</h3>
                 <p className="text-muted-foreground mt-2 mb-8 text-center max-w-sm">
                   Let our AI analyze your preferences and create a 7-day nutritional strategy just for you.
                 </p>

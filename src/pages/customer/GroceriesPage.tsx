@@ -340,11 +340,11 @@ export default function GroceriesPage() {
           </>
         ) : (
           /* Empty State */
-          <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-950/50 rounded-3xl border-2 border-dashed">
+          <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-950/50 rounded-3xl border-2 border-dashed dark:border-white/20">
             <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
               <ShoppingBasket className="h-10 w-10 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold">No grocery list yet</h3>
+            <h3 className="text-2xl font-bold text-foreground">No grocery list yet</h3>
             <p className="text-muted-foreground mt-2 mb-8 text-center max-w-sm">
               {plan ? 
                 "Your meal plan doesn't have ingredient data. Try regenerating it to get a grocery list." :

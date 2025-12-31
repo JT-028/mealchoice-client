@@ -9,12 +9,15 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { useEffect, useState } from "react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    // Detect initial theme
+    if (typeof window !== 'undefined' && document.documentElement.classList.contains("dark")) {
+      return "dark"
+    }
+    return "light"
+  })
 
   useEffect(() => {
-    // Detect initial theme
-    const isDark = document.documentElement.classList.contains("dark")
-    setTheme(isDark ? "dark" : "light")
 
     // Watch for theme changes
     const observer = new MutationObserver((mutations) => {

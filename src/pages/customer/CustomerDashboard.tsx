@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { getBudget, type Budget } from '@/api/budget';
+import { getBudget, getSpending, type Budget, type Spending } from '@/api/budget';
 import { getSavedMeals } from '@/api/recommendations';
 import {
   Wallet,
@@ -21,25 +21,26 @@ import {
 export function CustomerDashboard() {
   const { token, user } = useAuth();
   const [budget, setBudget] = useState<Budget | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [savedMealsCount, setSavedMealsCount] = useState(0);
-
-  // Mock spending data (will be real later)
-  const todaySpent = 185;
-  const weeklySpent = 1250;
+  const [spending, setSpending] = useState<Spending | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [savedMealsCount, setSavedMealsCount] = useState(0);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!token) return;
       
       try {
-        const [budgetRes, mealsRes] = await Promise.all([
+        const [budgetRes, spendingRes, mealsRes] = await Promise.all([
           getBudget(token),
+          getSpending(token),
           getSavedMeals(token)
         ]);
 
         if (budgetRes.success && budgetRes.budget) {
           setBudget(budgetRes.budget);
+        }
+        if (spendingRes.success && spendingRes.spending) {
+          setSpending(spendingRes.spending);
         }
         if (mealsRes.success && mealsRes.data) {
           setSavedMealsCount(mealsRes.data.length);
@@ -54,10 +55,13 @@ export function CustomerDashboard() {
     fetchDashboardData();
   }, [token]);
 
-  const dailyRemaining = budget ? budget.dailyLimit - todaySpent : 0;
-  const weeklyRemaining = budget ? budget.weeklyLimit - weeklySpent : 0;
-  const dailyPercentUsed = budget ? (todaySpent / budget.dailyLimit) * 100 : 0;
-  const weeklyPercentUsed = budget ? (weeklySpent / budget.weeklyLimit) * 100 : 0;
+  const dailyRemaining = spending ? spending.dailyRemaining : (budget ? budget.dailyLimit : 0);
+  const weeklyRemaining = spending ? spending.weeklyRemaining : (budget ? budget.weeklyLimit : 0);
+  const dailyPercentUsed = budget && spending ? (spending.todaySpent / budget.dailyLimit) * 100 : 0;
+  const weeklyPercentUsed = budget && spending ? (spending.weeklySpent / budget.weeklyLimit) * 100 : 0;
+  
+  const todaySpent = spending?.todaySpent || 0;
+  const weeklySpent = spending?.weeklySpent || 0;
 
   return (
     <CustomerLayout>

@@ -29,19 +29,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_KEY = 'mealchoice_cart';
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-
-  // Load cart from localStorage on mount
-  useEffect(() => {
+  const [items, setItems] = useState<CartItem[]>(() => {
     const savedCart = localStorage.getItem(CART_KEY);
     if (savedCart) {
       try {
-        setItems(JSON.parse(savedCart));
+        return JSON.parse(savedCart);
       } catch (e) {
         console.error('Error loading cart:', e);
       }
     }
-  }, []);
+    return [];
+  });
 
   // Save cart to localStorage on change
   useEffect(() => {

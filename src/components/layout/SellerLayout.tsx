@@ -88,7 +88,7 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border
+          fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border
           shadow-lg lg:shadow-none
           transform transition-transform duration-300 ease-in-out
           lg:translate-x-0
@@ -97,29 +97,29 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-border bg-sidebar">
+          <div className="flex items-center justify-between h-14 px-4 border-b border-border bg-card">
             <Link to="/seller" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-sm">
                 <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-lg text-sidebar-foreground">Meal Choice</span>
+              <span className="font-bold text-lg text-card-foreground">Meal Choice</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              className="lg:hidden p-1.5 rounded-md text-card-foreground hover:bg-accent transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* User Info */}
-          <div className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-accent/30">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
                 <Store className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sidebar-foreground truncate">{user?.name}</p>
+                <p className="font-semibold text-card-foreground truncate">{user?.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{user?.marketLocation || 'Seller'}</p>
               </div>
             </div>
@@ -142,7 +142,7 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
                     flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
                     ${isActive
                       ? 'bg-primary text-primary-foreground shadow-sm font-semibold'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      : 'text-card-foreground hover:bg-accent hover:text-accent-foreground'
                     }
                   `}
                 >
@@ -163,12 +163,12 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
           </nav>
 
           {/* Logout */}
-          <div className="p-3 border-t border-sidebar-border">
+          <div className="p-3 border-t border-border">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="w-full justify-start gap-3 text-card-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   <LogOut className="h-5 w-5" />
                   Logout

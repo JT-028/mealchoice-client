@@ -22,12 +22,14 @@ import {
   Menu,
   X,
   ChevronRight,
-  Shield
+  Shield,
+  ShieldCheck
 } from 'lucide-react';
 import { useState } from 'react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+  noPadding?: boolean;
 }
 
 const navItems = [
@@ -38,7 +40,7 @@ const navItems = [
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AdminLayout({ children, noPadding = false }: AdminLayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,25 +54,28 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex h-16 items-center justify-between px-4">
-          <button onClick={() => setSidebarOpen(true)} className="p-2">
-            <Menu className="h-6 w-6" />
+      <header className="lg:hidden sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="flex h-14 items-center justify-between px-4">
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="p-2 rounded-md hover:bg-accent transition-colors"
+          >
+            <Menu className="h-5 w-5 text-foreground" />
           </button>
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <UtensilsCrossed className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive shadow-sm">
+              <UtensilsCrossed className="h-4 w-4 text-destructive-foreground" />
             </div>
-            <span className="font-bold">Admin Panel</span>
+            <span className="font-bold text-foreground">Admin Panel</span>
           </Link>
-          <div className="w-10" />
+          <div className="w-9" />
         </div>
       </header>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-50 bg-black/50"
+          className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -78,75 +83,77 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border
-          transform transition-transform duration-200 ease-in-out
+          fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border
+          shadow-lg lg:shadow-none
+          transform transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
-            <Link to="/admin" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive">
+          <div className="flex items-center justify-between h-14 px-4 border-b border-border bg-card">
+            <Link to="/admin" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive shadow-sm">
                 <UtensilsCrossed className="h-5 w-5 text-destructive-foreground" />
               </div>
-              <span className="font-bold text-sidebar-foreground">Admin Panel</span>
+              <span className="font-bold text-lg text-card-foreground">Admin Panel</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1 text-sidebar-foreground"
+              className="lg:hidden p-1.5 rounded-md text-card-foreground hover:bg-accent transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* User Info */}
-          <div className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/20">
-                <Users className="h-5 w-5 text-destructive" />
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-accent/30">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 ring-2 ring-destructive/20">
+                <ShieldCheck className="h-5 w-5 text-destructive" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sidebar-foreground truncate">{user?.name}</p>
-                <p className="text-xs text-sidebar-foreground/60">Administrator</p>
+                <p className="font-semibold text-card-foreground truncate">{user?.name}</p>
+                <p className="text-xs text-muted-foreground">Administrator</p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
               const Icon = item.icon;
+
               return (
                 <Link
                   key={item.href}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`
-                    flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
                     ${isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      ? 'bg-destructive text-destructive-foreground shadow-sm font-semibold'
+                      : 'text-card-foreground hover:bg-accent hover:text-accent-foreground'
                     }
                   `}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
-                  {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
+                  <Icon className={`h-5 w-5 ${isActive ? '' : 'text-muted-foreground'}`} />
+                  <span className="flex-1">{item.label}</span>
+                  {isActive && <ChevronRight className="h-4 w-4 opacity-70" />}
                 </Link>
               );
             })}
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-3 border-t border-border">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  className="w-full justify-start gap-3 text-card-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   <LogOut className="h-5 w-5" />
                   Logout
@@ -156,12 +163,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    You will be redirected to the login page. Any unsaved changes will be lost.
+                    You will be redirected to the home page. Any unsaved changes will be lost.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+                  <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Logout
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -170,8 +179,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64">
-        <div className="p-4 lg:p-8">
+      <main className="lg:pl-64 min-h-screen">
+        <div className={noPadding ? '' : 'p-4 lg:p-6'}>
           {children}
         </div>
       </main>

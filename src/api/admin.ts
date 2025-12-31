@@ -236,6 +236,23 @@ export async function deleteAdmin(token: string, adminId: string): Promise<Admin
   return response.json();
 }
 
+// Update sub-admin
+export async function updateAdmin(
+  token: string,
+  adminId: string,
+  data: { name?: string; email?: string; phone?: string }
+): Promise<AdminsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/admins/${adminId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+}
+
 // Customer interface
 export interface Customer {
   _id: string;

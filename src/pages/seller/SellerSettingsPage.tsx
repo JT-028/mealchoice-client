@@ -14,6 +14,7 @@ import {
   updateSellerSettings,
   uploadPaymentQR,
   deletePaymentQR,
+  updateTheme,
   type UserSettings,
   type OperatingHours,
   type DayHours
@@ -30,7 +31,11 @@ import {
   Upload,
   Trash2,
   Clock,
-  MapPin
+  MapPin,
+  Palette,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
@@ -46,7 +51,7 @@ const DAYS_OF_WEEK = [
 const DEFAULT_HOURS: DayHours = { open: '06:00', close: '18:00', isClosed: false };
 
 export function SellerSettingsPage() {
-  const { token } = useAuth();
+  const { token, updateUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,6 +62,7 @@ export function SellerSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [operatingHours, setOperatingHours] = useState<OperatingHours>({
     monday: { ...DEFAULT_HOURS },
     tuesday: { ...DEFAULT_HOURS },
@@ -84,6 +90,8 @@ export function SellerSettingsPage() {
           setSettings(s);
           setName(s.name);
           setPhone(s.phone || '');
+          setSelectedTheme(s.theme || 'system');
+          updateUser({ theme: s.theme });
           if (s.operatingHours) {
             setOperatingHours(s.operatingHours);
           }
@@ -105,6 +113,22 @@ export function SellerSettingsPage() {
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
+
+  const handleThemeChange = async (theme: 'light' | 'dark' | 'system') => {
+    if (!token) return;
+    const previousTheme = selectedTheme;
+    setSelectedTheme(theme);
+    updateUser({ theme });
+    try {
+      await updateTheme(token, theme);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+      // Revert on failure
+      setSelectedTheme(previousTheme);
+      updateUser({ theme: previousTheme });
+      showMessage('error', 'Failed to save theme preference');
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -268,12 +292,13 @@ export function SellerSettingsPage() {
         )}
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="profile"><User className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="security"><Lock className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="store"><Store className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="notifications"><Bell className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="payment"><QrCode className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="appearance"><Palette className="h-4 w-4" /></TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -530,6 +555,44 @@ export function SellerSettingsPage() {
                 <p className="text-xs text-muted-foreground text-center">
                   Customers will see this QR code for payment
                 </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Appearance Tab */}
+          <TabsContent value="appearance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance</CardTitle>
+                <CardDescription>Customize how the app looks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <Button
+                    variant={selectedTheme === 'light' ? 'default' : 'outline'}
+                    className="flex flex-col h-auto py-4 gap-2"
+                    onClick={() => handleThemeChange('light')}
+                  >
+                    <Sun className="h-6 w-6" />
+                    <span>Light</span>
+                  </Button>
+                  <Button
+                    variant={selectedTheme === 'dark' ? 'default' : 'outline'}
+                    className="flex flex-col h-auto py-4 gap-2"
+                    onClick={() => handleThemeChange('dark')}
+                  >
+                    <Moon className="h-6 w-6" />
+                    <span>Dark</span>
+                  </Button>
+                  <Button
+                    variant={selectedTheme === 'system' ? 'default' : 'outline'}
+                    className="flex flex-col h-auto py-4 gap-2"
+                    onClick={() => handleThemeChange('system')}
+                  >
+                    <Monitor className="h-6 w-6" />
+                    <span>System</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

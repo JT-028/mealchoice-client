@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +20,7 @@ import {
   exportBackupCSV,
   importBackup
 } from '@/api/backup';
-import { getSettings, updateTheme } from '@/api/settings';
+import { getSettings, updateTheme, updateProfile } from '@/api/settings';
 import {
   Loader2,
   FileJson,
@@ -29,7 +31,9 @@ import {
   Sun,
   Moon,
   Monitor,
-  Palette
+  Palette,
+  User,
+  Save
 } from 'lucide-react';
 
 export function AdminSettingsPage() {
@@ -43,6 +47,14 @@ export function AdminSettingsPage() {
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [loadingSettings, setLoadingSettings] = useState(true);
 
+  // My Information state
+  const [profileForm, setProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+
   useEffect(() => {
     const fetchSettings = async () => {
       if (!token) return;
@@ -50,6 +62,15 @@ export function AdminSettingsPage() {
         const response = await getSettings(token);
         if (response.success && response.settings) {
           setSelectedTheme(response.settings.theme);
+          // Parse name into first and last name
+          const nameParts = (response.settings.name || '').split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          setProfileForm({
+            firstName,
+            lastName,
+            email: response.settings.email || ''
+          });
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -73,6 +94,28 @@ export function AdminSettingsPage() {
       await updateTheme(token, theme);
     } catch (error) {
       console.error('Error saving theme:', error);
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    setSavingProfile(true);
+    try {
+      const fullName = `${profileForm.firstName} ${profileForm.lastName}`.trim();
+      const response = await updateProfile(token, { name: fullName });
+      if (response.success) {
+        updateUser({ name: fullName });
+        showMessage('success', 'Profile information updated successfully');
+      } else {
+        showMessage('error', response.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      showMessage('error', 'Error updating profile');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -176,6 +219,67 @@ export function AdminSettingsPage() {
             {message.text}
           </div>
         )}
+
+        {/* My Information Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              My Information
+            </CardTitle>
+            <CardDescription>Update your personal details</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={profileForm.firstName}
+                    onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
+                    placeholder="First Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={profileForm.lastName}
+                    onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
+                    placeholder="Last Name"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profileForm.email}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">Email cannot be changed directly</p>
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={savingProfile}>
+                  {savingProfile ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      SAVE INFORMATION
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Appearance Card */}
         <Card>

@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAdmins, createAdmin, deleteAdmin, type Admin } from '@/api/admin';
+import { getAdmins, createAdmin, updateAdmin, deleteAdmin, type Admin } from '@/api/admin';
 import {
   UserPlus,
   Trash2,
@@ -57,6 +57,12 @@ export function AdminsPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Edit dialog state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
+  const [editData, setEditData] = useState({ name: '', email: '', phone: '' });
+  const [editError, setEditError] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -130,6 +136,44 @@ export function AdminsPage() {
   const handleDeleteClick = (admin: Admin) => {
     setAdminToDelete(admin);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditClick = (admin: Admin) => {
+    setEditingAdmin(admin);
+    setEditData({
+      name: admin.name,
+      email: admin.email,
+      phone: admin.phone || ''
+    });
+    setEditError('');
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !editingAdmin) return;
+
+    setEditError('');
+    setSubmitting(true);
+    try {
+      const response = await updateAdmin(token, editingAdmin._id, {
+        name: editData.name,
+        email: editData.email,
+        phone: editData.phone
+      });
+
+      if (response.success) {
+        setEditOpen(false);
+        setEditingAdmin(null);
+        fetchAdmins();
+      } else {
+        setEditError(response.message || 'Failed to update admin');
+      }
+    } catch (error) {
+      setEditError('Error updating admin account');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -351,6 +395,7 @@ export function AdminsPage() {
                               variant="ghost"
                               size="icon"
                               title="Edit"
+                              onClick={() => handleEditClick(admin)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -403,6 +448,69 @@ export function AdminsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Admin Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Admin Account</DialogTitle>
+              <DialogDescription>
+                Update administrator account information.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              {editError && (
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                  {editError}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editData.name}
+                  onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone Number</Label>
+                <Input
+                  id="edit-phone"
+                  type="tel"
+                  value={editData.phone}
+                  onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="e.g., 09171234567"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

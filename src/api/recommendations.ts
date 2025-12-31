@@ -56,11 +56,25 @@ export interface SavedMeal extends Recommendation {
   _id: string;
   user: string;
   createdAt: string;
+  scheduledDate?: string;
+  mealType?: MealCategory;
 }
 
 export interface SavedMealsResponse {
   success: boolean;
   data: SavedMeal[];
+}
+
+export type MealCategory = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+
+export interface CategoryRecommendationResponse {
+  success: boolean;
+  mealType: MealCategory;
+  data: {
+    recommendations: Recommendation[];
+    nutritionalAdvice: string;
+    summary: string;
+  };
 }
 
 export const getAIRecommendations = async (token: string): Promise<RecommendationResponse> => {
@@ -93,14 +107,23 @@ export const getAIMealPlan = async (token: string): Promise<MealPlanResponse> =>
   return response.json();
 };
 
-export const saveMeal = async (token: string, meal: Partial<Recommendation>): Promise<{ success: boolean; data: SavedMeal }> => {
+export const saveMeal = async (
+  token: string,
+  meal: Partial<Recommendation>,
+  scheduledDate?: Date | null,
+  mealType?: MealCategory | null
+): Promise<{ success: boolean; data: SavedMeal }> => {
   const response = await fetch(`${API_BASE_URL}/meals`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(meal),
+    body: JSON.stringify({
+      ...meal,
+      scheduledDate: scheduledDate ? scheduledDate.toISOString() : null,
+      mealType: mealType || null,
+    }),
   });
 
   if (!response.ok) {
@@ -111,7 +134,24 @@ export const saveMeal = async (token: string, meal: Partial<Recommendation>): Pr
   return response.json();
 };
 
+export const deleteAllSavedMeals = async (token: string): Promise<{ success: boolean; message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/meals/all`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to reset meal plan');
+  }
+
+  return response.json();
+};
+
 export const getSavedMeals = async (token: string): Promise<SavedMealsResponse> => {
+
   const response = await fetch(`${API_BASE_URL}/meals`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -142,6 +182,24 @@ export const deleteSavedMeal = async (token: string, mealId: string): Promise<{ 
   return response.json();
 };
 
+export const getAIRecommendationsByCategory = async (
+  token: string,
+  mealType: MealCategory
+): Promise<CategoryRecommendationResponse> => {
+  const response = await fetch(`${API_BASE_URL}/recommendations/generate/${mealType}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || `Failed to fetch ${mealType} recommendations`);
+  }
+
+  return response.json();
+};
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner';
 
 export interface MealItem {
@@ -161,22 +219,22 @@ export interface GroceryItem {
 // Helper function to aggregate groceries from a meal plan
 export const aggregateGroceries = (weekPlan: { [key: string]: MealPlanDay }): GroceryItem[] => {
   const groceryMap = new Map<string, { meals: Set<string>; count: number }>();
-  
+
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const slots: ('breakfast' | 'lunch' | 'dinner')[] = ['breakfast', 'lunch', 'dinner'];
-  
+
   days.forEach(day => {
     const dayPlan = weekPlan[day];
     if (!dayPlan) return;
-    
+
     slots.forEach(slot => {
       const meal = dayPlan[slot];
       if (!meal?.ingredients) return;
-      
+
       meal.ingredients.forEach(ingredient => {
         const normalizedName = ingredient.toLowerCase().trim();
         const existing = groceryMap.get(normalizedName);
-        
+
         if (existing) {
           existing.meals.add(`${day} ${slot}`);
           existing.count++;
@@ -189,7 +247,7 @@ export const aggregateGroceries = (weekPlan: { [key: string]: MealPlanDay }): Gr
       });
     });
   });
-  
+
   return Array.from(groceryMap.entries())
     .map(([name, data]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),

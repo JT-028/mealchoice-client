@@ -42,8 +42,8 @@ interface CustomerLayoutProps {
 const navItems = [
   { href: '/customer', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/customer/browse', label: 'Browse Products', icon: ShoppingBag },
-  { href: '/customer/ai-recommendations', label: 'AI Recommendations', icon: Sparkles },
-  { href: '/customer/ai-meal-planner', label: 'AI Meal Planner', icon: Calendar },
+  { href: '/customer/generate-meals', label: 'Generate Meals', icon: Sparkles },
+  { href: '/customer/meal-planner', label: 'Meal Planner', icon: Calendar },
   { href: '/customer/groceries', label: 'Groceries', icon: ShoppingBasket },
   { href: '/customer/cart', label: 'Cart', icon: ShoppingCart },
   { href: '/customer/orders', label: 'My Orders', icon: Package },
@@ -69,8 +69,8 @@ export function CustomerLayout({ children, noPadding = false }: CustomerLayoutPr
       {/* Mobile Header */}
       <header className="lg:hidden sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="flex h-14 items-center justify-between px-4">
-          <button 
-            onClick={() => setSidebarOpen(true)} 
+          <button
+            onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-md hover:bg-accent transition-colors"
           >
             <Menu className="h-5 w-5 text-foreground" />
@@ -157,8 +157,8 @@ export function CustomerLayout({ children, noPadding = false }: CustomerLayoutPr
                   <Icon className={`h-5 w-5 ${isActive ? '' : 'text-muted-foreground'}`} />
                   <span className="flex-1">{item.label}</span>
                   {showBadge && (
-                    <Badge 
-                      variant={isActive ? "secondary" : "default"} 
+                    <Badge
+                      variant={isActive ? "secondary" : "default"}
                       className="rounded-full h-5 min-w-5 flex items-center justify-center text-xs"
                     >
                       {totalUnreadCount > 99 ? '99+' : totalUnreadCount}

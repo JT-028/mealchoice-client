@@ -16,7 +16,6 @@ import {
   UtensilsCrossed,
   LayoutDashboard,
   Users,
-  UserCheck,
   UserRound,
   Settings,
   LogOut,
@@ -33,8 +32,7 @@ interface AdminLayoutProps {
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/pending', label: 'Pending Accounts', icon: UserCheck },
-  { href: '/admin/sellers', label: 'All Sellers', icon: Users },
+  { href: '/admin/sellers', label: 'Sellers', icon: Users },
   { href: '/admin/customers', label: 'Customers', icon: UserRound },
   { href: '/admin/admins', label: 'Admins', icon: Shield },
   { href: '/admin/settings', label: 'Settings', icon: Settings },

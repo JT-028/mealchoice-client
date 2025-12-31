@@ -25,7 +25,8 @@ import {
   Menu,
   X,
   ChevronRight,
-  Warehouse
+  Warehouse,
+  Store
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -58,25 +59,28 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur">
-        <div className="flex h-16 items-center justify-between px-4">
-          <button onClick={() => setSidebarOpen(true)} className="p-2">
-            <Menu className="h-6 w-6" />
+      <header className="lg:hidden sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="flex h-14 items-center justify-between px-4">
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="p-2 rounded-md hover:bg-accent transition-colors"
+          >
+            <Menu className="h-5 w-5 text-foreground" />
           </button>
           <Link to="/seller" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
               <UtensilsCrossed className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-bold">Meal Choice</span>
+            <span className="font-bold text-foreground">Meal Choice</span>
           </Link>
-          <div className="w-10" /> {/* Spacer */}
+          <div className="w-9" />
         </div>
       </header>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-50 bg-black/50"
+          className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -85,23 +89,24 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border
-          transform transition-transform duration-200 ease-in-out
+          shadow-lg lg:shadow-none
+          transform transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
-            <Link to="/seller" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+          <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-border bg-sidebar">
+            <Link to="/seller" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-sm">
                 <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-sidebar-foreground">Meal Choice</span>
+              <span className="font-bold text-lg text-sidebar-foreground">Meal Choice</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1 text-sidebar-foreground"
+              className="lg:hidden p-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -109,19 +114,19 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
 
           {/* User Info */}
           <div className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-primary/20">
-                <Package className="h-5 w-5 text-sidebar-primary" />
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 ring-2 ring-primary/20">
+                <Store className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sidebar-foreground truncate">{user?.name}</p>
-                <p className="text-xs text-sidebar-foreground/60">{user?.marketLocation || 'Seller'}</p>
+                <p className="font-semibold text-sidebar-foreground truncate">{user?.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.marketLocation || 'Seller'}</p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
               const Icon = item.icon;
@@ -134,33 +139,36 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`
-                    flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
                     ${isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      ? 'bg-primary text-primary-foreground shadow-sm font-semibold'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }
                   `}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon className={`h-5 w-5 ${isActive ? '' : 'text-muted-foreground'}`} />
+                  <span className="flex-1">{item.label}</span>
                   {showBadge && (
-                    <Badge variant="default" className="ml-auto rounded-full h-5 min-w-5 flex items-center justify-center">
+                    <Badge 
+                      variant={isActive ? "secondary" : "default"} 
+                      className="rounded-full h-5 min-w-5 flex items-center justify-center text-xs"
+                    >
                       {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                     </Badge>
                   )}
-                  {isActive && !showBadge && <ChevronRight className="h-4 w-4 ml-auto" />}
+                  {isActive && !showBadge && <ChevronRight className="h-4 w-4 opacity-70" />}
                 </Link>
               );
             })}
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-3 border-t border-sidebar-border">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   <LogOut className="h-5 w-5" />
                   Logout
@@ -170,12 +178,14 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    You will be redirected to the login page. Any unsaved changes will be lost.
+                    You will be redirected to the home page. Any unsaved changes will be lost.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+                  <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Logout
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -184,8 +194,8 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64">
-        <div className={noPadding ? '' : 'p-4 lg:p-8'}>
+      <main className="lg:pl-64 min-h-screen">
+        <div className={noPadding ? '' : 'p-4 lg:p-6'}>
           {children}
         </div>
       </main>

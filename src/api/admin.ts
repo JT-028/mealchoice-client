@@ -189,6 +189,7 @@ export interface Admin {
   _id: string;
   name: string;
   email: string;
+  phone?: string | null;
   isMainAdmin: boolean;
   isActive: boolean;
   createdAt: string;
@@ -213,7 +214,7 @@ export async function getAdmins(token: string): Promise<AdminsResponse> {
 // Create sub-admin
 export async function createAdmin(
   token: string,
-  data: { name: string; email: string; password: string }
+  data: { name: string; email: string; phone?: string; password: string }
 ): Promise<AdminsResponse> {
   const response = await fetch(`${API_BASE_URL}/admin/admins`, {
     method: 'POST',

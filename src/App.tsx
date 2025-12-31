@@ -32,7 +32,6 @@ import GroceriesPage from './pages/customer/GroceriesPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { PendingAccountsPage } from './pages/admin/PendingAccountsPage';
 import { SellersPage } from './pages/admin/SellersPage';
 import { AdminsPage } from './pages/admin/AdminsPage';
 import { CustomersPage } from './pages/admin/CustomersPage';
@@ -94,14 +93,6 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/pending"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <PendingAccountsPage />
                   </ProtectedRoute>
                 }
               />

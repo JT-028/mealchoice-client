@@ -39,7 +39,10 @@ import {
   Loader2,
   Shield,
   ShieldCheck,
-  Users
+  Users,
+  Eye,
+  EyeOff,
+  Edit
 } from 'lucide-react';
 
 export function AdminsPage() {
@@ -52,11 +55,14 @@ export function AdminsPage() {
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -101,12 +107,15 @@ export function AdminsPage() {
       const response = await createAdmin(token, {
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password
       });
 
       if (response.success) {
         setFormOpen(false);
-        setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+        setFormData({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
+        setShowPassword(false);
+        setShowConfirmPassword(false);
         fetchAdmins();
       } else {
         setError(response.message || 'Failed to create admin');
@@ -161,7 +170,7 @@ export function AdminsPage() {
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add Admin
+                Create Admin
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -197,25 +206,55 @@ export function AdminsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="phone">Phone Number</Label>
                   <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    required
-                    minLength={6}
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="e.g., 09171234567"
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      required
+                      minLength={6}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
@@ -249,7 +288,7 @@ export function AdminsPage() {
               <p className="text-muted-foreground mb-4">Create your first sub-admin account</p>
               <Button onClick={() => setFormOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add Admin
+                Create Admin
               </Button>
             </CardContent>
           </Card>
@@ -268,16 +307,19 @@ export function AdminsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>#</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {admins.map((admin) => (
+                  {admins.map((admin, index) => (
                     <TableRow key={admin._id}>
+                      <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {admin.isMainAdmin ? (
@@ -289,6 +331,7 @@ export function AdminsPage() {
                         </div>
                       </TableCell>
                       <TableCell>{admin.email}</TableCell>
+                      <TableCell>{admin.phone || <span className="text-muted-foreground">—</span>}</TableCell>
                       <TableCell>
                         {admin.isMainAdmin ? (
                           <Badge className="bg-primary">Main Admin</Badge>
@@ -303,14 +346,24 @@ export function AdminsPage() {
                         ) : admin._id === user?.id ? (
                           <span className="text-xs text-muted-foreground">Current User</span>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteClick(admin)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteClick(admin)}
+                              className="text-destructive hover:text-destructive"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>

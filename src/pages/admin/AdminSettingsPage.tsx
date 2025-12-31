@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,27 +18,62 @@ import {
   exportBackupCSV,
   importBackup
 } from '@/api/backup';
+import { getSettings, updateTheme } from '@/api/settings';
 import {
   Loader2,
   FileJson,
   FileSpreadsheet,
   Upload,
   Database,
-  Settings
+  Settings,
+  Sun,
+  Moon,
+  Monitor,
+  Palette
 } from 'lucide-react';
 
 export function AdminSettingsPage() {
-  const { token } = useAuth();
+  const { token, updateUser } = useAuth();
   const [message, setMessage] = useState({ type: '', text: '' });
   const [exportingJSON, setExportingJSON] = useState(false);
   const [exportingCSV, setExportingCSV] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!token) return;
+      try {
+        const response = await getSettings(token);
+        if (response.success && response.settings) {
+          setSelectedTheme(response.settings.theme);
+        }
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, [token]);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
+
+  const handleThemeChange = async (theme: 'light' | 'dark' | 'system') => {
+    if (!token) return;
+    setSelectedTheme(theme);
+    updateUser({ theme });
+    try {
+      await updateTheme(token, theme);
+    } catch (error) {
+      console.error('Error saving theme:', error);
+    }
   };
 
   const handleExportJSON = async () => {
@@ -111,6 +146,16 @@ export function AdminSettingsPage() {
     }
   };
 
+  if (loadingSettings) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="max-w-2xl mx-auto space-y-6">
@@ -119,7 +164,7 @@ export function AdminSettingsPage() {
             <Settings className="h-8 w-8" />
             Admin Settings
           </h1>
-          <p className="text-muted-foreground">System backup and restore</p>
+          <p className="text-muted-foreground">System preferences and backup management</p>
         </div>
 
         {message.text && (
@@ -132,6 +177,46 @@ export function AdminSettingsPage() {
           </div>
         )}
 
+        {/* Appearance Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Appearance
+            </CardTitle>
+            <CardDescription>Customize how the admin panel looks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <Button
+                variant={selectedTheme === 'light' ? 'default' : 'outline'}
+                className="flex flex-col h-auto py-4 gap-2"
+                onClick={() => handleThemeChange('light')}
+              >
+                <Sun className="h-6 w-6" />
+                <span>Light</span>
+              </Button>
+              <Button
+                variant={selectedTheme === 'dark' ? 'default' : 'outline'}
+                className="flex flex-col h-auto py-4 gap-2"
+                onClick={() => handleThemeChange('dark')}
+              >
+                <Moon className="h-6 w-6" />
+                <span>Dark</span>
+              </Button>
+              <Button
+                variant={selectedTheme === 'system' ? 'default' : 'outline'}
+                className="flex flex-col h-auto py-4 gap-2"
+                onClick={() => handleThemeChange('system')}
+              >
+                <Monitor className="h-6 w-6" />
+                <span>System</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Backup Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

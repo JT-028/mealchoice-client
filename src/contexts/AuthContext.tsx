@@ -17,16 +17,6 @@ const TOKEN_KEY = 'mealchoice_token';
 const USER_KEY = 'mealchoice_user';
 const THEME_KEY = 'mealwise_theme';
 
-const applyTheme = (theme: 'light' | 'dark' | 'system') => {
-  const root = document.documentElement;
-  if (theme === 'system') {
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    root.classList.toggle('dark', systemDark);
-  } else {
-    root.classList.toggle('dark', theme === 'dark');
-  }
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);

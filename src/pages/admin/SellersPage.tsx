@@ -212,7 +212,7 @@ export function SellersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">All Sellers</h1>
+            <h1 className="text-3xl font-bold text-foreground">Seller Account</h1>
             <p className="text-muted-foreground">Manage seller accounts and information</p>
           </div>
           <Button onClick={() => setCreateDialog(true)}>
@@ -263,6 +263,7 @@ export function SellersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">#</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Market</TableHead>
@@ -274,8 +275,9 @@ export function SellersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSellers.map((seller) => (
+                {filteredSellers.map((seller, index) => (
                   <TableRow key={seller._id}>
+                    <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                     <TableCell className="font-medium">{seller.name}</TableCell>
                     <TableCell>{seller.email}</TableCell>
                     <TableCell>

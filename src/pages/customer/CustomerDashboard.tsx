@@ -151,13 +151,13 @@ export function CustomerDashboard() {
               </Card>
             </div>
 
-            {/* Quick Actions */}
+              {/* Quick Actions */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingBag className="h-5 w-5 text-primary" />
-                    Browse Products
+                    Market
                   </CardTitle>
                   <CardDescription>Explore fresh products from local markets</CardDescription>
                 </CardHeader>
@@ -174,7 +174,7 @@ export function CustomerDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-primary" />
-                    Plan Meals
+                    Meal Plan
                   </CardTitle>
                   <CardDescription>Create your weekly meal plan</CardDescription>
                 </CardHeader>
@@ -191,7 +191,7 @@ export function CustomerDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary" />
-                    AI Recommendations
+                    Generate Meal
                   </CardTitle>
                   <CardDescription>Personalized meal suggestions just for you</CardDescription>
                 </CardHeader>

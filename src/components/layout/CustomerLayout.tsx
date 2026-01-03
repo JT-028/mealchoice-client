@@ -31,7 +31,8 @@ import {
   User,
   Store,
   ClipboardList,
-  Video
+  Video,
+  RotateCcw
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -41,7 +42,7 @@ interface CustomerLayoutProps {
 }
 
 const navItems = [
-  { href: '/customer', label: 'Dash Board', icon: LayoutDashboard },
+  { href: '/customer', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/customer/browse', label: 'Market', icon: Store },
   { href: '/customer/generate-meals', label: 'Generate Meal', icon: Sparkles },
   { href: '/customer/meal-planner', label: 'Meal Plan', icon: Calendar },
@@ -55,7 +56,7 @@ const navItems = [
 ];
 
 export function CustomerLayout({ children, noPadding = false }: CustomerLayoutProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { totalUnreadCount } = useChat();
   const location = useLocation();
   const navigate = useNavigate();
@@ -64,6 +65,11 @@ export function CustomerLayout({ children, noPadding = false }: CustomerLayoutPr
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleResetOnboarding = () => {
+    updateUser({ hasCompletedOnboarding: false });
+    navigate('/customer/onboarding');
   };
 
   return (
@@ -173,7 +179,16 @@ export function CustomerLayout({ children, noPadding = false }: CustomerLayoutPr
           </nav>
 
           {/* Logout */}
-          <div className="p-3 border-t border-border">
+          <div className="p-3 border-t border-border space-y-1">
+            <Button
+              variant="ghost"
+              onClick={handleResetOnboarding}
+              className="w-full justify-start gap-3 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+            >
+              <RotateCcw className="h-5 w-5" />
+              Reset Onboarding
+            </Button>
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button

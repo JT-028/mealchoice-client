@@ -38,7 +38,13 @@ const steps = [
 
 const dietaryOptions = [
     'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free',
-    'Nut-Free', 'Halal', 'Kosher', 'Low-Sodium', 'Diabetic-Friendly'
+    'Nut-Free', 'Halal', 'Kosher', 'Low-Sodium', 'Diabetic-Friendly', 'Other'
+];
+
+const ingredientOptions = [
+    'Chicken', 'Beef', 'Pork', 'Fish', 'Shellfish',
+    'Eggs', 'Dairy', 'Peanuts', 'Tree Nuts', 'Soy',
+    'Wheat', 'Rice', 'Pasta', 'Vegetables', 'Fruits', 'Other'
 ];
 
 const mealTypeOptions = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
@@ -77,26 +83,28 @@ export function OnboardingPage() {
         sex: '',
         activityLevel: '',
         dietaryRestrictions: [] as string[],
+        otherDietaryRestriction: '',
     });
 
     // Meal preferences
     const [meal, setMeal] = useState({
         preferredMealTypes: [] as string[],
         preferredCuisines: [] as string[],
-        preferredIngredients: '',
-        avoidedIngredients: '',
-        calorieMin: 1200,
-        calorieMax: 2500,
-        maxSodium: 2300,
-        maxSugar: 50,
-        maxFats: 65,
+        preferredIngredients: [] as string[],
+        otherPreferredIngredient: '',
+        avoidedIngredients: [] as string[],
+        otherAvoidedIngredient: '',
+        calorieMin: 1200 as number | string,
+        calorieMax: 2500 as number | string,
+        maxSodium: 2300 as number | string,
+        maxSugar: 50 as number | string,
+        maxFats: 65 as number | string,
     });
 
     // Budget preferences
     const [budget, setBudget] = useState({
-        weeklyBudget: '',
-        budgetPerMeal: '',
-        prefersPriceRange: '',
+        weeklyBudget: '' as string | number,
+        budgetPerMeal: '' as string | number,
     });
 
     const toggleDietaryRestriction = (restriction: string) => {
@@ -126,6 +134,39 @@ export function OnboardingPage() {
         }));
     };
 
+    const togglePreferredIngredient = (ingredient: string) => {
+        setMeal(prev => ({
+            ...prev,
+            preferredIngredients: prev.preferredIngredients.includes(ingredient)
+                ? prev.preferredIngredients.filter(i => i !== ingredient)
+                : [...prev.preferredIngredients, ingredient]
+        }));
+    };
+
+    const toggleAvoidedIngredient = (ingredient: string) => {
+        setMeal(prev => ({
+            ...prev,
+            avoidedIngredients: prev.avoidedIngredients.includes(ingredient)
+                ? prev.avoidedIngredients.filter(i => i !== ingredient)
+                : [...prev.avoidedIngredients, ingredient]
+        }));
+    };
+
+    const handleBudgetInput = (field: keyof typeof budget, value: string) => {
+        setBudget(prev => ({
+            ...prev,
+            [field]: value === '' ? '' : Number(value)
+        }));
+    };
+
+    const handleNumberInput = (field: keyof typeof meal, value: string) => {
+        // Allow empty string, otherwise parse as number
+        setMeal(prev => ({
+            ...prev,
+            [field]: value === '' ? '' : Number(value)
+        }));
+    };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
@@ -142,23 +183,28 @@ export function OnboardingPage() {
                         age: health.age ? Number(health.age) : null,
                         sex: health.sex || null,
                         activityLevel: health.activityLevel || null,
-                        dietaryRestrictions: health.dietaryRestrictions,
+                        dietaryRestrictions: health.dietaryRestrictions.includes('Other') && health.otherDietaryRestriction
+                            ? [...health.dietaryRestrictions.filter(r => r !== 'Other'), health.otherDietaryRestriction]
+                            : health.dietaryRestrictions,
                     },
                     meal: {
                         preferredMealTypes: meal.preferredMealTypes,
                         preferredCuisines: meal.preferredCuisines,
-                        preferredIngredients: meal.preferredIngredients.split(',').map(i => i.trim()).filter(Boolean),
-                        avoidedIngredients: meal.avoidedIngredients.split(',').map(i => i.trim()).filter(Boolean),
-                        calorieMin: meal.calorieMin,
-                        calorieMax: meal.calorieMax,
-                        maxSodium: meal.maxSodium,
-                        maxSugar: meal.maxSugar,
-                        maxFats: meal.maxFats,
+                        preferredIngredients: meal.preferredIngredients.includes('Other') && meal.otherPreferredIngredient
+                            ? [...meal.preferredIngredients.filter(i => i !== 'Other'), meal.otherPreferredIngredient]
+                            : meal.preferredIngredients,
+                        avoidedIngredients: meal.avoidedIngredients.includes('Other') && meal.otherAvoidedIngredient
+                            ? [...meal.avoidedIngredients.filter(i => i !== 'Other'), meal.otherAvoidedIngredient]
+                            : meal.avoidedIngredients,
+                        calorieMin: Number(meal.calorieMin),
+                        calorieMax: Number(meal.calorieMax),
+                        maxSodium: Number(meal.maxSodium),
+                        maxSugar: Number(meal.maxSugar),
+                        maxFats: Number(meal.maxFats),
                     },
                     budget: {
                         weeklyBudget: budget.weeklyBudget ? Number(budget.weeklyBudget) : null,
                         budgetPerMeal: budget.budgetPerMeal ? Number(budget.budgetPerMeal) : null,
-                        prefersPriceRange: budget.prefersPriceRange || null,
                     },
                 }),
             });
@@ -480,7 +526,7 @@ export function OnboardingPage() {
                                                                 id="height"
                                                                 type="number"
                                                                 min={1}
-                                                                placeholder="170"
+                                                                placeholder=""
                                                                 value={health.height}
                                                                 onChange={(e) => setHealth({ ...health, height: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
@@ -491,7 +537,7 @@ export function OnboardingPage() {
                                                                 id="weight"
                                                                 type="number"
                                                                 min={1}
-                                                                placeholder="65"
+                                                                placeholder=""
                                                                 value={health.weight}
                                                                 onChange={(e) => setHealth({ ...health, weight: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
@@ -502,7 +548,7 @@ export function OnboardingPage() {
                                                                 id="age"
                                                                 type="number"
                                                                 min={1}
-                                                                placeholder="25"
+                                                                placeholder=""
                                                                 value={health.age}
                                                                 onChange={(e) => setHealth({ ...health, age: Math.max(0, Number(e.target.value)).toString() })}
                                                             />
@@ -552,6 +598,18 @@ export function OnboardingPage() {
                                                                 </Badge>
                                                             ))}
                                                         </div>
+                                                        {health.dietaryRestrictions.includes('Other') && (
+                                                            <div className="mt-2">
+                                                                <Label htmlFor="otherDietary">Please specify other restrictions</Label>
+                                                                <Input
+                                                                    id="otherDietary"
+                                                                    placeholder="Enter your dietary restriction"
+                                                                    value={health.otherDietaryRestriction}
+                                                                    onChange={(e) => setHealth({ ...health, otherDietaryRestriction: e.target.value })}
+                                                                    className="mt-1"
+                                                                />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </CardContent>
                                             </Card>
@@ -639,22 +697,48 @@ export function OnboardingPage() {
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="preferredIngredients">Preferred Ingredients</Label>
-                                                            <Input
-                                                                id="preferredIngredients"
-                                                                placeholder="chicken, rice, vegetables..."
-                                                                value={meal.preferredIngredients}
-                                                                onChange={(e) => setMeal({ ...meal, preferredIngredients: e.target.value })}
-                                                            />
+                                                            <Label>Preferred Ingredients</Label>
+                                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                                {ingredientOptions.map(option => (
+                                                                    <Badge
+                                                                        key={`pref-${option}`}
+                                                                        variant={meal.preferredIngredients.includes(option) ? 'default' : 'outline'}
+                                                                        className="cursor-pointer transition-all hover:scale-105"
+                                                                        onClick={() => togglePreferredIngredient(option)}
+                                                                    >
+                                                                        {option}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                            {meal.preferredIngredients.includes('Other') && (
+                                                                <Input
+                                                                    placeholder="Enter other preferred ingredient"
+                                                                    value={meal.otherPreferredIngredient}
+                                                                    onChange={(e) => setMeal({ ...meal, otherPreferredIngredient: e.target.value })}
+                                                                />
+                                                            )}
                                                         </div>
                                                         <div className="space-y-2">
-                                                            <Label htmlFor="avoidedIngredients">Avoided Ingredients</Label>
-                                                            <Input
-                                                                id="avoidedIngredients"
-                                                                placeholder="peanuts, shellfish..."
-                                                                value={meal.avoidedIngredients}
-                                                                onChange={(e) => setMeal({ ...meal, avoidedIngredients: e.target.value })}
-                                                            />
+                                                            <Label>Avoided Ingredients</Label>
+                                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                                {ingredientOptions.map(option => (
+                                                                    <Badge
+                                                                        key={`avoid-${option}`}
+                                                                        variant={meal.avoidedIngredients.includes(option) ? 'default' : 'outline'}
+                                                                        className="cursor-pointer transition-all hover:scale-105"
+                                                                        onClick={() => toggleAvoidedIngredient(option)}
+                                                                    >
+                                                                        {option}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                            {meal.avoidedIngredients.includes('Other') && (
+                                                                <Input
+                                                                    placeholder="Enter ingredient to avoid"
+                                                                    value={meal.otherAvoidedIngredient}
+                                                                    onChange={(e) => setMeal({ ...meal, otherAvoidedIngredient: e.target.value })}
+                                                                />
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <TooltipProvider>
@@ -676,7 +760,8 @@ export function OnboardingPage() {
                                                                     type="number"
                                                                     min={0}
                                                                     value={meal.calorieMin}
-                                                                    onChange={(e) => setMeal({ ...meal, calorieMin: Math.max(0, Number(e.target.value)) })}
+                                                                    onChange={(e) => handleNumberInput('calorieMin', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
@@ -696,7 +781,8 @@ export function OnboardingPage() {
                                                                     type="number"
                                                                     min={0}
                                                                     value={meal.calorieMax}
-                                                                    onChange={(e) => setMeal({ ...meal, calorieMax: Math.max(0, Number(e.target.value)) })}
+                                                                    onChange={(e) => handleNumberInput('calorieMax', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
                                                                 />
                                                             </div>
                                                         </div>
@@ -718,7 +804,8 @@ export function OnboardingPage() {
                                                                     type="number"
                                                                     min={0}
                                                                     value={meal.maxSodium}
-                                                                    onChange={(e) => setMeal({ ...meal, maxSodium: Math.max(0, Number(e.target.value)) })}
+                                                                    onChange={(e) => handleNumberInput('maxSodium', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
@@ -738,7 +825,8 @@ export function OnboardingPage() {
                                                                     type="number"
                                                                     min={0}
                                                                     value={meal.maxSugar}
-                                                                    onChange={(e) => setMeal({ ...meal, maxSugar: Math.max(0, Number(e.target.value)) })}
+                                                                    onChange={(e) => handleNumberInput('maxSugar', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
                                                                 />
                                                             </div>
                                                             <div className="space-y-2">
@@ -758,7 +846,8 @@ export function OnboardingPage() {
                                                                     type="number"
                                                                     min={0}
                                                                     value={meal.maxFats}
-                                                                    onChange={(e) => setMeal({ ...meal, maxFats: Math.max(0, Number(e.target.value)) })}
+                                                                    onChange={(e) => handleNumberInput('maxFats', e.target.value)}
+                                                                    onFocus={(e) => e.target.select()}
                                                                 />
                                                             </div>
                                                         </div>
@@ -826,7 +915,8 @@ export function OnboardingPage() {
                                                                 min={0}
                                                                 placeholder="2000"
                                                                 value={budget.weeklyBudget}
-                                                                onChange={(e) => setBudget({ ...budget, weeklyBudget: Math.max(0, Number(e.target.value)).toString() })}
+                                                                onChange={(e) => handleBudgetInput('weeklyBudget', e.target.value)}
+                                                                onFocus={(e) => e.target.select()}
                                                             />
                                                             <p className="text-xs text-muted-foreground">
                                                                 How much do you plan to spend on food each week?
@@ -840,36 +930,12 @@ export function OnboardingPage() {
                                                                 min={0}
                                                                 placeholder="100"
                                                                 value={budget.budgetPerMeal}
-                                                                onChange={(e) => setBudget({ ...budget, budgetPerMeal: Math.max(0, Number(e.target.value)).toString() })}
+                                                                onChange={(e) => handleBudgetInput('budgetPerMeal', e.target.value)}
+                                                                onFocus={(e) => e.target.select()}
                                                             />
                                                             <p className="text-xs text-muted-foreground">
                                                                 Average amount you'd like to spend per meal.
                                                             </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-3">
-                                                        <Label>Preferred Price Range</Label>
-                                                        <div className="grid grid-cols-3 gap-3">
-                                                            {[
-                                                                { value: 'budget', label: 'Budget', desc: 'Affordable options' },
-                                                                { value: 'moderate', label: 'Moderate', desc: 'Balanced value' },
-                                                                { value: 'premium', label: 'Premium', desc: 'Quality first' },
-                                                            ].map(option => (
-                                                                <motion.button
-                                                                    key={option.value}
-                                                                    type="button"
-                                                                    whileHover={{ scale: 1.02 }}
-                                                                    whileTap={{ scale: 0.98 }}
-                                                                    onClick={() => setBudget({ ...budget, prefersPriceRange: option.value })}
-                                                                    className={`p-4 rounded-lg border-2 text-left transition-all ${budget.prefersPriceRange === option.value
-                                                                        ? 'border-primary bg-primary/5'
-                                                                        : 'border-border hover:border-primary/50'
-                                                                        }`}
-                                                                >
-                                                                    <div className="font-medium">{option.label}</div>
-                                                                    <div className="text-xs text-muted-foreground">{option.desc}</div>
-                                                                </motion.button>
-                                                            ))}
                                                         </div>
                                                     </div>
                                                 </CardContent>

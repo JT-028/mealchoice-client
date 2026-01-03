@@ -31,6 +31,8 @@ export interface UserSettings {
   notifyNewOrders?: boolean;
   notifyLowStock?: boolean;
   paymentQR?: string;
+  acceptsQR?: boolean;
+  hasOwnDelivery?: boolean;
 }
 
 export interface SettingsResponse {
@@ -128,6 +130,8 @@ export async function updateSellerSettings(
     operatingHours?: Partial<OperatingHours>;
     notifyNewOrders?: boolean;
     notifyLowStock?: boolean;
+    acceptsQR?: boolean;
+    hasOwnDelivery?: boolean;
   }
 ): Promise<SettingsResponse> {
   const response = await fetch(`${API_BASE_URL}/settings/seller`, {
@@ -170,7 +174,7 @@ export async function deletePaymentQR(token: string): Promise<SettingsResponse> 
 export async function getSellersInfo(
   token: string,
   sellerIds: string[]
-): Promise<{ success: boolean; sellers?: Array<{ _id: string; name: string; marketLocation: string; paymentQR?: string }> }> {
+): Promise<{ success: boolean; sellers?: Array<{ _id: string; name: string; marketLocation: string; paymentQR?: string; acceptsQR?: boolean; hasOwnDelivery?: boolean }> }> {
   const response = await fetch(`${API_BASE_URL}/settings/sellers-info`, {
     method: 'POST',
     headers: {

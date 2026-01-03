@@ -38,6 +38,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
+import { formatCurrency } from '@/lib/utils';
 
 type PaymentMethod = 'qr' | 'cod';
 type DeliveryType = 'pickup' | 'delivery';
@@ -51,7 +52,7 @@ export function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [sellersInfo, setSellersInfo] = useState<Record<string, { paymentQR?: string }>>({});
+  const [sellersInfo, setSellersInfo] = useState<Record<string, { paymentQR?: string; acceptsQR?: boolean; hasOwnDelivery?: boolean }>>({});
   const [receipts, setReceipts] = useState<Record<string, File>>({});
   const [paymentMethods, setPaymentMethods] = useState<Record<string, PaymentMethod>>({});
   
@@ -102,9 +103,13 @@ export function CheckoutPage() {
       try {
         const response = await getSellersInfo(token, ids);
         if (response.success && response.sellers) {
-          const infoMap: Record<string, { paymentQR?: string }> = {};
+          const infoMap: Record<string, { paymentQR?: string; acceptsQR?: boolean; hasOwnDelivery?: boolean }> = {};
           response.sellers.forEach(s => {
-            infoMap[s._id] = { paymentQR: s.paymentQR };
+            infoMap[s._id] = { 
+              paymentQR: s.paymentQR,
+              acceptsQR: s.acceptsQR,
+              hasOwnDelivery: s.hasOwnDelivery
+            };
           });
           setSellersInfo(infoMap);
 
@@ -114,7 +119,7 @@ export function CheckoutPage() {
             if (response.sellers) {
               response.sellers.forEach(s => {
                 if (!(s._id in updated)) {
-                  // Default to COD, user can switch to QR if available
+                  // Default to COD/Cash
                   updated[s._id] = 'cod';
                 }
               });
@@ -338,19 +343,19 @@ export function CheckoutPage() {
               <div className="flex-1">
                 <h3 className="font-semibold text-amber-700 dark:text-amber-300">Order Exceeds Budget</h3>
                 <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                  This order of <strong>₱{totalPrice.toFixed(2)}</strong> will exceed your remaining budget:
+                  This order of <strong>{formatCurrency(totalPrice)}</strong> will exceed your remaining budget:
                 </p>
                 <ul className="text-sm text-amber-600 dark:text-amber-400 mt-2 space-y-1">
                   {exceedsDailyBudget && (
                     <li>
-                      • Daily: ₱{spending.dailyRemaining.toFixed(2)} remaining of ₱{spending.dailyLimit.toFixed(2)}
-                      <span className="font-medium"> (₱{(totalPrice - spending.dailyRemaining).toFixed(2)} over)</span>
+                      • Daily: {formatCurrency(spending.dailyRemaining)} remaining of {formatCurrency(spending.dailyLimit)}
+                      <span className="font-medium"> ({formatCurrency(totalPrice - spending.dailyRemaining)} over)</span>
                     </li>
                   )}
                   {exceedsWeeklyBudget && (
                     <li>
-                      • Weekly: ₱{spending.weeklyRemaining.toFixed(2)} remaining of ₱{spending.weeklyLimit.toFixed(2)}
-                      <span className="font-medium"> (₱{(totalPrice - spending.weeklyRemaining).toFixed(2)} over)</span>
+                      • Weekly: {formatCurrency(spending.weeklyRemaining)} remaining of {formatCurrency(spending.weeklyLimit)}
+                      <span className="font-medium"> ({formatCurrency(totalPrice - spending.weeklyRemaining)} over)</span>
                     </li>
                   )}
                 </ul>
@@ -365,7 +370,10 @@ export function CheckoutPage() {
         {/* Order Summary by Seller */}
         {Object.entries(itemsBySeller).map(([sellerId, group]) => {
           const sellerInfo = sellersInfo[sellerId];
-          const hasQR = sellerInfo?.paymentQR;
+          const hasQR = sellerInfo?.acceptsQR && sellerInfo?.paymentQR;
+          // COD is effectively "Cash" for pickup, or "COD" for delivery
+          // It should always be an option if delivery is pickup (Cash at Store)
+          // If delivery is "delivery", it's only available if seller has own delivery (which is checked globally for the option to appear, but good to be safe)
           const selectedMethod = paymentMethods[sellerId] || 'cod';
 
           return (
@@ -376,7 +384,7 @@ export function CheckoutPage() {
                     <h3 className="font-semibold">{group.sellerName}</h3>
                     <p className="text-sm text-muted-foreground">{group.marketLocation}</p>
                   </div>
-                  <p className="font-semibold text-primary">₱{group.subtotal.toFixed(2)}</p>
+                  <p className="font-semibold text-primary">{formatCurrency(group.subtotal)}</p>
                 </div>
 
                 <div className="space-y-2 mb-6">
@@ -387,7 +395,7 @@ export function CheckoutPage() {
                         <span>{item.name}</span>
                         <span className="text-muted-foreground">x{item.quantity}</span>
                       </div>
-                      <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                      <span>{formatCurrency(item.price * item.quantity)}</span>
                     </div>
                   ))}
                 </div>
@@ -400,7 +408,7 @@ export function CheckoutPage() {
                     onValueChange={(value) => handlePaymentMethodChange(sellerId, value as PaymentMethod)}
                     className="space-y-3"
                   >
-                    {/* Cash on Delivery Option */}
+                    {/* Cash Option (COD/Pick-up) */}
                     <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
                       <RadioGroupItem value="cod" id={`cod-${sellerId}`} />
                       <Label htmlFor={`cod-${sellerId}`} className="flex items-center gap-3 cursor-pointer flex-1">
@@ -408,13 +416,17 @@ export function CheckoutPage() {
                           <Banknote className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">Cash on Delivery</p>
-                          <p className="text-xs text-muted-foreground">Pay when you receive your order</p>
+                          <p className="font-medium text-foreground">
+                            {deliveryType === 'pickup' ? 'Cash Payment' : 'Cash on Delivery'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {deliveryType === 'pickup' ? 'Pay at the store upon pickup' : 'Pay when you receive your order'}
+                          </p>
                         </div>
                       </Label>
                     </div>
 
-                    {/* QR Payment Option */}
+                    {/* QR Payment Option - Only if enabled by seller */}
                     {hasQR && (
                       <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'qr' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
                         <RadioGroupItem value="qr" id={`qr-${sellerId}`} />
@@ -452,7 +464,7 @@ export function CheckoutPage() {
                               Please scan this QR code to make your payment before confirming.
                             </p>
                             <div className="text-sm font-medium bg-primary/10 text-primary px-2 py-1 rounded inline-block">
-                              Amount to Pay: ₱{group.subtotal.toFixed(2)}
+                              Amount to Pay: {formatCurrency(group.subtotal)}
                             </div>
                           </div>
                         </div>
@@ -497,16 +509,31 @@ export function CheckoutPage() {
                   </div>
                 </Label>
               </div>
-              <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
-                <RadioGroupItem value="delivery" id="delivery" />
-                <Label htmlFor="delivery" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Truck className="h-5 w-5 text-blue-500" />
-                  <div>
-                    <p className="font-medium">Home Delivery</p>
-                    <p className="text-sm text-muted-foreground">Seller will arrange delivery</p>
-                  </div>
-                </Label>
-              </div>
+              
+              {/* Only show delivery if all sellers support it */}
+              {Object.keys(itemsBySeller).every(id => sellersInfo[id]?.hasOwnDelivery) ? (
+                <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                  <RadioGroupItem value="delivery" id="delivery" />
+                  <Label htmlFor="delivery" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Truck className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <p className="font-medium">Home Delivery</p>
+                      <p className="text-sm text-muted-foreground">Seller will arrange delivery</p>
+                    </div>
+                  </Label>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-muted/20 opacity-60">
+                  <RadioGroupItem value="delivery" id="delivery" disabled />
+                  <Label htmlFor="delivery" className="flex items-center gap-2 flex-1">
+                    <Truck className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-muted-foreground">Home Delivery Unavailable</p>
+                      <p className="text-sm text-muted-foreground">One or more sellers do not offer delivery</p>
+                    </div>
+                  </Label>
+                </div>
+              )}
             </RadioGroup>
 
             {/* Address Form for Delivery */}
@@ -635,7 +662,7 @@ export function CheckoutPage() {
           <CardContent className="pt-6">
             <div className="flex justify-between text-lg font-bold mb-4">
               <span>Total</span>
-              <span className="text-primary">₱{totalPrice.toFixed(2)}</span>
+              <span className="text-primary">{formatCurrency(totalPrice)}</span>
             </div>
 
             <Button
@@ -678,20 +705,20 @@ export function CheckoutPage() {
             </AlertDialogTitle>
             <AlertDialogDescription className="text-left space-y-2">
               <p>
-                This order of <strong>₱{totalPrice.toFixed(2)}</strong> will put you over your budget:
+                This order of <strong>{formatCurrency(totalPrice)}</strong> will put you over your budget:
               </p>
               {spending && (
                 <ul className="list-disc pl-5 space-y-1">
                   {exceedsDailyBudget && (
                     <li>
-                      Daily budget: ₱{spending.dailyRemaining.toFixed(2)} remaining → 
-                      <span className="text-destructive font-medium"> ₱{(totalPrice - spending.dailyRemaining).toFixed(2)} over</span>
+                      Daily budget: {formatCurrency(spending.dailyRemaining)} remaining → 
+                      <span className="text-destructive font-medium"> {formatCurrency(totalPrice - spending.dailyRemaining)} over</span>
                     </li>
                   )}
                   {exceedsWeeklyBudget && (
                     <li>
-                      Weekly budget: ₱{spending.weeklyRemaining.toFixed(2)} remaining → 
-                      <span className="text-destructive font-medium"> ₱{(totalPrice - spending.weeklyRemaining).toFixed(2)} over</span>
+                      Weekly budget: {formatCurrency(spending.weeklyRemaining)} remaining → 
+                      <span className="text-destructive font-medium"> {formatCurrency(totalPrice - spending.weeklyRemaining)} over</span>
                     </li>
                   )}
                 </ul>

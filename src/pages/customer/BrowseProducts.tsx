@@ -20,6 +20,7 @@ import {
   Check
 } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
+import { formatCurrency } from '@/lib/utils';
 
 export function BrowseProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -198,7 +199,7 @@ export function BrowseProducts() {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-lg font-bold text-primary">
-                                ₱{product.price.toFixed(2)}
+                                {formatCurrency(product.price)}
                                 <span className="text-sm font-normal text-muted-foreground">
                                   /{product.unit}
                                 </span>

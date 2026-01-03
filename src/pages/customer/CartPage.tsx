@@ -13,6 +13,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
+import { formatCurrency } from '@/lib/utils';
 
 export function CartPage() {
   const navigate = useNavigate();
@@ -94,7 +95,7 @@ export function CartPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{item.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      ₱{item.price.toFixed(2)} / {item.unit}
+                      {formatCurrency(item.price)} / {item.unit}
                     </p>
                   </div>
 
@@ -125,7 +126,7 @@ export function CartPage() {
                   </div>
 
                   <div className="text-right min-w-[80px]">
-                    <p className="font-semibold">₱{(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-semibold">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
 
                   <Button
@@ -148,16 +149,16 @@ export function CartPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>₱{totalPrice.toFixed(2)}</span>
+                <span>{formatCurrency(totalPrice)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Service Fee</span>
-                <span>₱0.00</span>
+                <span>{formatCurrency(0)}</span>
               </div>
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">₱{totalPrice.toFixed(2)}</span>
+                  <span className="text-primary">{formatCurrency(totalPrice)}</span>
                 </div>
               </div>
             </div>

@@ -50,7 +50,9 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 
 const mealCategories: { id: MealCategory; label: string; icon: typeof Sun; description: string }[] = [
   { id: 'breakfast', label: 'Breakfast', icon: Coffee, description: 'Start your day right' },
@@ -83,6 +85,7 @@ export default function AIRecommendationsPage() {
     dinner: false,
     snacks: false,
   });
+  const [selectedCategories, setSelectedCategories] = useState<MealCategory[]>(['breakfast', 'lunch', 'dinner', 'snacks']);
   const [, setError] = useState<string | null>(null);
 
   // Save meal dialog state
@@ -128,9 +131,31 @@ export default function AIRecommendationsPage() {
       localStorage.setItem(`generate_meals_${category}`, JSON.stringify(response.data));
     } catch (err: any) {
       setError(err.message || `Failed to fetch ${category} recommendations`);
+      toast.error(`Failed to generate ${category}: ${err.message}`);
     } finally {
       setLoadingCategories(prev => ({ ...prev, [category]: false }));
     }
+  };
+
+  const handleGenerateAll = async () => {
+    if (selectedCategories.length === 0) {
+      toast.error("Please select at least one category to generate.");
+      return;
+    }
+    
+    // Process sequentially to avoid overwhelming the server/rate limits
+    for (const category of selectedCategories) {
+      await fetchCategoryRecommendations(category);
+    }
+    toast.success("All selected categories generated!");
+  };
+
+  const toggleCategorySelection = (category: MealCategory) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
   };
 
   const openSaveDialog = (meal: Recommendation) => {
@@ -225,6 +250,49 @@ export default function AIRecommendationsPage() {
 
         {/* Category Tabs Section */}
         <div className="relative z-10 -mt-20 px-6 lg:px-12 pb-24">
+          
+          {/* Checklist & Generate All */}
+          <Card className="mb-8 border-none shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex flex-wrap items-center gap-6 justify-center md:justify-start">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground mr-2">Generate for:</span>
+                  </div>
+                  {mealCategories.map((cat) => (
+                    <div key={cat.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`check-${cat.id}`} 
+                        checked={selectedCategories.includes(cat.id)}
+                        onCheckedChange={() => toggleCategorySelection(cat.id)}
+                      />
+                      <label
+                        htmlFor={`check-${cat.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none"
+                      >
+                        {cat.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                
+                <Button 
+                  size="lg" 
+                  onClick={handleGenerateAll}
+                  disabled={Object.values(loadingCategories).some(Boolean) || selectedCategories.length === 0}
+                  className="w-full md:w-auto shadow-md hover:shadow-xl transition-all"
+                >
+                  {Object.values(loadingCategories).some(Boolean) ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-5 w-5" />
+                  )}
+                  Generate Selected
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MealCategory)} className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-8 h-auto p-1 bg-background/80 backdrop-blur-md border shadow-lg">
               {mealCategories.map(category => {
@@ -327,7 +395,7 @@ export default function AIRecommendationsPage() {
                               <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-1 font-bold text-lg text-primary">
                                   <Coins className="h-4 w-4 text-green-500" />
-                                  <span>₱{meal.estimatedCost.toFixed(2)}</span>
+                                  <span>{formatCurrency(meal.estimatedCost)}</span>
                                 </div>
                               </div>
                               <CardTitle className="text-2xl group-hover:text-primary transition-colors">{meal.mealName}</CardTitle>
@@ -491,7 +559,7 @@ export default function AIRecommendationsPage() {
                   </Badge>
                   <Badge variant="outline" className="text-green-600 border-green-600">
                     <Coins className="h-3 w-3 mr-1" />
-                    ₱{selectedMeal.estimatedCost.toFixed(2)}
+                    {formatCurrency(selectedMeal.estimatedCost)}
                   </Badge>
                   <Badge variant="outline" className="text-orange-600 border-orange-600">
                     <Flame className="h-3 w-3 mr-1" />

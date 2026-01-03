@@ -17,6 +17,7 @@ import {
   UtensilsCrossed,
   Sparkles
 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 export function CustomerDashboard() {
   const { token, user } = useAuth();
@@ -88,7 +89,7 @@ export function CustomerDashboard() {
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₱{dailyRemaining.toFixed(0)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(dailyRemaining)}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -99,7 +100,7 @@ export function CustomerDashboard() {
                     <span className="text-xs text-muted-foreground">{dailyPercentUsed.toFixed(0)}%</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    ₱{todaySpent} of ₱{budget?.dailyLimit} spent
+                    {formatCurrency(todaySpent)} of {formatCurrency(budget?.dailyLimit || 0)} spent
                   </p>
                 </CardContent>
               </Card>
@@ -110,7 +111,7 @@ export function CustomerDashboard() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₱{weeklyRemaining.toFixed(0)}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(weeklyRemaining)}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -121,7 +122,7 @@ export function CustomerDashboard() {
                     <span className="text-xs text-muted-foreground">{weeklyPercentUsed.toFixed(0)}%</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    ₱{weeklySpent} of ₱{budget?.weeklyLimit} spent
+                    {formatCurrency(weeklySpent)} of {formatCurrency(budget?.weeklyLimit || 0)} spent
                   </p>
                 </CardContent>
               </Card>

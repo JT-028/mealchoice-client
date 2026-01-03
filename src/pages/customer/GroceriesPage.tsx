@@ -27,6 +27,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -433,7 +434,7 @@ export default function GroceriesPage() {
                       {seller?.name || 'Seller'} • {product.marketLocation}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary">₱{product.price}/{product.unit}</Badge>
+                      <Badge variant="secondary">{formatCurrency(product.price)}/{product.unit}</Badge>
                       <Badge variant="outline">{product.quantity} available</Badge>
                     </div>
                   </div>

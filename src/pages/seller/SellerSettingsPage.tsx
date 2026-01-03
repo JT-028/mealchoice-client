@@ -35,7 +35,8 @@ import {
   Palette,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Truck
 } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
@@ -74,6 +75,8 @@ export function SellerSettingsPage() {
   });
   const [notifyNewOrders, setNotifyNewOrders] = useState(true);
   const [notifyLowStock, setNotifyLowStock] = useState(true);
+  const [acceptsQR, setAcceptsQR] = useState(false);
+  const [hasOwnDelivery, setHasOwnDelivery] = useState(false);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   
   const [saving, setSaving] = useState(false);
@@ -97,6 +100,8 @@ export function SellerSettingsPage() {
           }
           setNotifyNewOrders(s.notifyNewOrders ?? true);
           setNotifyLowStock(s.notifyLowStock ?? true);
+          setAcceptsQR(s.acceptsQR ?? false);
+          setHasOwnDelivery(s.hasOwnDelivery ?? false);
           if (s.paymentQR) {
             setQrPreview(getImageUrl(s.paymentQR));
           }
@@ -203,19 +208,23 @@ export function SellerSettingsPage() {
     }
   };
 
-  const handleUpdateNotifications = async (type: 'orders' | 'stock', value: boolean) => {
+  const handleUpdateNotifications = async (type: 'orders' | 'stock' | 'qr' | 'delivery', value: boolean) => {
     if (!token) return;
     
     if (type === 'orders') setNotifyNewOrders(value);
-    else setNotifyLowStock(value);
+    else if (type === 'stock') setNotifyLowStock(value);
+    else if (type === 'qr') setAcceptsQR(value);
+    else if (type === 'delivery') setHasOwnDelivery(value);
 
     try {
       await updateSellerSettings(token, {
         notifyNewOrders: type === 'orders' ? value : notifyNewOrders,
-        notifyLowStock: type === 'stock' ? value : notifyLowStock
+        notifyLowStock: type === 'stock' ? value : notifyLowStock,
+        acceptsQR: type === 'qr' ? value : acceptsQR,
+        hasOwnDelivery: type === 'delivery' ? value : hasOwnDelivery
       });
     } catch (error) {
-      console.error('Error updating notifications:', error);
+      console.error('Error updating settings:', error);
     }
   };
 
@@ -416,6 +425,28 @@ export function SellerSettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Delivery Settings
+                </CardTitle>
+                <CardDescription>Manage your delivery options</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Own Delivery Service</Label>
+                    <p className="text-sm text-muted-foreground">Enable if you offer your own delivery service (COD available)</p>
+                  </div>
+                  <Switch
+                    checked={hasOwnDelivery}
+                    onCheckedChange={(checked) => handleUpdateNotifications('delivery', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   Operating Hours
                 </CardTitle>
@@ -500,61 +531,76 @@ export function SellerSettingsPage() {
                 <CardTitle>Payment QR Code</CardTitle>
                 <CardDescription>Upload your payment QR for customers to pay</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleQRSelect}
-                  className="hidden"
-                />
-                
-                {qrPreview ? (
-                  <div className="space-y-4">
-                    <div className="w-48 h-48 mx-auto border rounded-lg overflow-hidden bg-white">
-                      <img
-                        src={qrPreview}
-                        alt="Payment QR"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <div className="flex gap-2 justify-center">
-                      <Button
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingQR}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Change
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={handleDeleteQR}
-                        disabled={uploadingQR}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Remove
-                      </Button>
-                    </div>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between border-b pb-6">
+                  <div>
+                    <Label>Enable QR Payment</Label>
+                    <p className="text-sm text-muted-foreground">Allow customers to pay via QR code</p>
                   </div>
-                ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-48 h-48 mx-auto border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                  >
-                    {uploadingQR ? (
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Switch
+                    checked={acceptsQR}
+                    onCheckedChange={(checked) => handleUpdateNotifications('qr', checked)}
+                  />
+                </div>
+
+                {acceptsQR && (
+                  <div className="space-y-4 pt-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleQRSelect}
+                      className="hidden"
+                    />
+                    
+                    {qrPreview ? (
+                      <div className="space-y-4">
+                        <div className="w-48 h-48 mx-auto border rounded-lg overflow-hidden bg-white">
+                          <img
+                            src={qrPreview}
+                            alt="Payment QR"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingQR}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Change
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleDeleteQR}
+                            disabled={uploadingQR}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
                     ) : (
-                      <>
-                        <QrCode className="h-12 w-12 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">Click to upload</span>
-                      </>
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-48 h-48 mx-auto border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      >
+                        {uploadingQR ? (
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <QrCode className="h-12 w-12 text-muted-foreground mb-2" />
+                            <span className="text-sm text-muted-foreground">Click to upload</span>
+                          </>
+                        )}
+                      </div>
                     )}
+                    <p className="text-xs text-muted-foreground text-center">
+                      Customers will see this QR code for payment
+                    </p>
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground text-center">
-                  Customers will see this QR code for payment
-                </p>
               </CardContent>
             </Card>
           </TabsContent>

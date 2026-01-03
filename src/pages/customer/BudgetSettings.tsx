@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { getBudget, updateBudget, type Budget } from '@/api/budget';
+import { formatCurrency } from '@/lib/utils';
 import {
   Wallet,
   Save,
@@ -114,7 +115,7 @@ export function BudgetSettings() {
                   <CardTitle className="text-sm font-medium">Today's Spending</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₱{todaySpent}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(todaySpent)}</div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -124,7 +125,7 @@ export function BudgetSettings() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    ₱{formData.dailyLimit - todaySpent} remaining of ₱{formData.dailyLimit}
+                    {formatCurrency(formData.dailyLimit - todaySpent)} remaining of {formatCurrency(formData.dailyLimit)}
                   </p>
                 </CardContent>
               </Card>
@@ -134,7 +135,7 @@ export function BudgetSettings() {
                   <CardTitle className="text-sm font-medium">Weekly Spending</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₱{weeklySpent}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(weeklySpent)}</div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -144,7 +145,7 @@ export function BudgetSettings() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    ₱{formData.weeklyLimit - weeklySpent} remaining of ₱{formData.weeklyLimit}
+                    {formatCurrency(formData.weeklyLimit - weeklySpent)} remaining of {formatCurrency(formData.weeklyLimit)}
                   </p>
                 </CardContent>
               </Card>

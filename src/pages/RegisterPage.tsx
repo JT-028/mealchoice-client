@@ -53,8 +53,11 @@ export function RegisterPage() {
   // Show success message after registration
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10" />
+      <div className="min-h-screen bg-background flex items-center justify-center lg:justify-end p-4 lg:pr-32">
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-20"
+          style={{ backgroundImage: 'url("/login-bg.webp")' }}
+        />
         <Card className="relative w-full max-w-md shadow-lg">
           <CardContent className="pt-8 pb-8 text-center">
             <div className="flex justify-center mb-4">
@@ -81,10 +84,11 @@ export function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10" />
-      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center opacity-20"
+        style={{ backgroundImage: 'url("/login-bg.webp")' }}
+      />
 
       <Card className="relative w-full max-w-md shadow-lg">
         <CardHeader className="text-center">

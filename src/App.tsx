@@ -26,6 +26,7 @@ import { OrdersPage } from './pages/customer/OrdersPage';
 import { CustomerMessagesPage } from './pages/customer/CustomerMessagesPage';
 import { CustomerSettingsPage } from './pages/customer/CustomerSettingsPage';
 import { OnboardingPage } from './pages/customer/OnboardingPage';
+import { TutorialPage } from './pages/customer/TutorialPage';
 import AIRecommendationsPage from './pages/customer/AIRecommendationsPage';
 import AIMealPlannerPage from './pages/customer/AIMealPlannerPage';
 import GroceriesPage from './pages/customer/GroceriesPage';
@@ -223,6 +224,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={['customer']}>
                       <CustomerSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/customer/tutorial"
+                  element={
+                    <ProtectedRoute allowedRoles={['customer']}>
+                      <TutorialPage />
                     </ProtectedRoute>
                   }
                 />

@@ -69,7 +69,7 @@ interface CategoryData {
 
 export default function AIRecommendationsPage() {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState<MealCategory>('breakfast');
   const [categoryData, setCategoryData] = useState<Record<MealCategory, CategoryData | null>>({
     breakfast: null,
@@ -83,7 +83,7 @@ export default function AIRecommendationsPage() {
     dinner: false,
     snacks: false,
   });
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   // Save meal dialog state
   const [savingMeal, setSavingMeal] = useState<string | null>(null);
@@ -172,8 +172,7 @@ export default function AIRecommendationsPage() {
     }
   };
 
-  const currentCategoryData = categoryData[activeTab];
-  const isLoading = loadingCategories[activeTab];
+
 
   return (
     <CustomerLayout noPadding>

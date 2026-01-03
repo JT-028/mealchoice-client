@@ -17,7 +17,6 @@ import {
 import {
   UtensilsCrossed,
   LayoutDashboard,
-  ShoppingBag,
   ShoppingCart,
   Package,
   Wallet,
@@ -29,8 +28,10 @@ import {
   MessageSquare,
   Sparkles,
   Calendar,
-  ShoppingBasket,
-  User
+  User,
+  Store,
+  ClipboardList,
+  Video
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -40,16 +41,17 @@ interface CustomerLayoutProps {
 }
 
 const navItems = [
-  { href: '/customer', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/customer/browse', label: 'Browse Products', icon: ShoppingBag },
-  { href: '/customer/generate-meals', label: 'Generate Meals', icon: Sparkles },
-  { href: '/customer/meal-planner', label: 'Meal Planner', icon: Calendar },
-  { href: '/customer/groceries', label: 'Groceries', icon: ShoppingBasket },
-  { href: '/customer/cart', label: 'Cart', icon: ShoppingCart },
+  { href: '/customer', label: 'Dash Board', icon: LayoutDashboard },
+  { href: '/customer/browse', label: 'Market', icon: Store },
+  { href: '/customer/generate-meals', label: 'Generate Meal', icon: Sparkles },
+  { href: '/customer/meal-planner', label: 'Meal Plan', icon: Calendar },
+  { href: '/customer/groceries', label: 'Check List', icon: ClipboardList },
+  { href: '/customer/cart', label: 'My Carts', icon: ShoppingCart },
   { href: '/customer/orders', label: 'My Orders', icon: Package },
   { href: '/customer/messages', label: 'Messages', icon: MessageSquare },
   { href: '/customer/budget', label: 'Budget', icon: Wallet },
-  { href: '/customer/settings', label: 'Settings', icon: Settings },
+  { href: '/customer/settings', label: 'Setting', icon: Settings },
+  { href: '/customer/tutorial', label: 'Tutorial Video', icon: Video },
 ];
 
 export function CustomerLayout({ children, noPadding = false }: CustomerLayoutProps) {

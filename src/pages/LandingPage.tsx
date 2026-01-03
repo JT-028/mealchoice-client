@@ -70,7 +70,7 @@ export function LandingPage() {
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Plan nutritious meals, track your food budget, and order from local markets — 
-              all in one app designed for Pampanga and San Nicolas markets.
+              all in one, designed for Pampanga and San Nicolas markets.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -23,6 +23,7 @@ export interface Spending {
   dailyRemaining: number;
   weeklyRemaining: number;
   alertThreshold: number;
+  isLowBalance?: boolean;
 }
 
 export interface SpendingResponse {

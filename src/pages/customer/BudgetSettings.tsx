@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { getBudget, updateBudget, type Budget } from '@/api/budget';
+import { getBudget, updateBudget, getSpending, type Spending } from '@/api/budget';
 import { formatCurrency } from '@/lib/utils';
 import {
   Wallet,
@@ -17,7 +17,7 @@ import {
 
 export function BudgetSettings() {
   const { token } = useAuth();
-  const [_budget, setBudget] = useState<Budget | null>(null);
+  const [spending, setSpending] = useState<Spending | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -26,31 +26,39 @@ export function BudgetSettings() {
   const [formData, setFormData] = useState({
     dailyLimit: 500,
     weeklyLimit: 3000,
-    alertThreshold: 80,
+    alertThreshold: 300,
   });
 
   useEffect(() => {
-    const fetchBudget = async () => {
+    const fetchData = async () => {
       if (!token) return;
       
       try {
-        const response = await getBudget(token);
-        if (response.success && response.budget) {
-          setBudget(response.budget);
+        const [budgetRes, spendingRes] = await Promise.all([
+          getBudget(token),
+          getSpending(token)
+        ]);
+
+        if (budgetRes.success && budgetRes.budget) {
+          setBudget(budgetRes.budget);
           setFormData({
-            dailyLimit: response.budget.dailyLimit,
-            weeklyLimit: response.budget.weeklyLimit,
-            alertThreshold: response.budget.alertThreshold,
+            dailyLimit: budgetRes.budget.dailyLimit,
+            weeklyLimit: budgetRes.budget.weeklyLimit,
+            alertThreshold: budgetRes.budget.alertThreshold,
           });
         }
+
+        if (spendingRes.success && spendingRes.spending) {
+          setSpending(spendingRes.spending);
+        }
       } catch (error) {
-        console.error('Error fetching budget:', error);
+        console.error('Error fetching budget data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBudget();
+    fetchData();
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,9 +97,16 @@ export function BudgetSettings() {
     }
   };
 
-  // Actual spending - will be calculated from completed orders when API is implemented
-  const todaySpent = 0;
-  const weeklySpent = 0;
+  const todaySpent = spending?.todaySpent || 0;
+  const weeklySpent = spending?.weeklySpent || 0;
+  
+  const dailyRemaining = Math.max(0, formData.dailyLimit - todaySpent);
+  // Calculate percentage used for visual bar
+  const dailyPercentUsed = formData.dailyLimit > 0 ? (todaySpent / formData.dailyLimit) * 100 : 0;
+  const weeklyPercentUsed = formData.weeklyLimit > 0 ? (weeklySpent / formData.weeklyLimit) * 100 : 0;
+  
+  // Alert logic: Trigger if remaining balance is less than or equal to threshold
+  const isLowDaily = dailyRemaining <= formData.alertThreshold;
 
   return (
     <CustomerLayout>
@@ -112,20 +127,28 @@ export function BudgetSettings() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Today's Spending</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium">Today's Spending</CardTitle>
+                    {isLowDaily && (
+                      <div className="flex items-center gap-1 text-xs text-destructive font-medium">
+                        <AlertTriangle className="h-3 w-3" />
+                        Low Balance
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{formatCurrency(todaySpent)}</div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full ${(todaySpent / formData.dailyLimit) * 100 > formData.alertThreshold ? 'bg-destructive' : 'bg-primary'}`}
-                        style={{ width: `${Math.min((todaySpent / formData.dailyLimit) * 100, 100)}%` }}
+                        className={`h-full rounded-full transition-all ${isLowDaily ? 'bg-destructive' : 'bg-primary'}`}
+                        style={{ width: `${Math.min(dailyPercentUsed, 100)}%` }}
                       />
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {formatCurrency(formData.dailyLimit - todaySpent)} remaining of {formatCurrency(formData.dailyLimit)}
+                    {formatCurrency(dailyRemaining)} remaining of {formatCurrency(formData.dailyLimit)}
                   </p>
                 </CardContent>
               </Card>
@@ -139,13 +162,13 @@ export function BudgetSettings() {
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full ${(weeklySpent / formData.weeklyLimit) * 100 > formData.alertThreshold ? 'bg-destructive' : 'bg-primary'}`}
-                        style={{ width: `${Math.min((weeklySpent / formData.weeklyLimit) * 100, 100)}%` }}
+                        className={`h-full rounded-full transition-all ${weeklyRemaining <= formData.alertThreshold ? 'bg-destructive' : 'bg-primary'}`}
+                        style={{ width: `${Math.min(weeklyPercentUsed, 100)}%` }}
                       />
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {formatCurrency(formData.weeklyLimit - weeklySpent)} remaining of {formatCurrency(formData.weeklyLimit)}
+                    {formatCurrency(Math.max(0, formData.weeklyLimit - weeklySpent))} remaining of {formatCurrency(formData.weeklyLimit)}
                   </p>
                 </CardContent>
               </Card>
@@ -211,18 +234,18 @@ export function BudgetSettings() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="alertThreshold">Alert Threshold (%)</Label>
+                    <Label htmlFor="alertThreshold">Spending Alert</Label>
                     <Input
                       id="alertThreshold"
                       type="number"
                       min="0"
-                      max="100"
                       value={formData.alertThreshold}
                       onChange={(e) => setFormData({ ...formData, alertThreshold: Number(e.target.value) })}
                       disabled={saving}
+                      placeholder="e.g. 300"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Get notified when you've spent this percentage of your budget
+                      Get notified when your remaining daily budget drops to this amount or below
                     </p>
                   </div>
 
@@ -263,4 +286,3 @@ export function BudgetSettings() {
     </CustomerLayout>
   );
 }
-``

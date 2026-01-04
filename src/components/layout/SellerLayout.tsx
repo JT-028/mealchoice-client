@@ -26,7 +26,8 @@ import {
   X,
   ChevronRight,
   Warehouse,
-  Store
+  Store,
+  Video
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -37,11 +38,12 @@ interface SellerLayoutProps {
 
 const navItems = [
   { href: '/seller', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/seller/products', label: 'Products', icon: Package },
+  { href: '/seller/products', label: 'My Products', icon: Package },
   { href: '/seller/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/seller/inventory', label: 'Inventory', icon: Warehouse },
+  { href: '/seller/inventory', label: 'Inventories', icon: Warehouse },
   { href: '/seller/messages', label: 'Messages', icon: MessageCircle },
-  { href: '/seller/settings', label: 'Settings', icon: Settings },
+  { href: '/seller/settings', label: 'Setting', icon: Settings },
+  { href: '/seller/tutorial', label: 'Tutorial Video', icon: Video },
 ];
 
 export function SellerLayout({ children, noPadding = false }: SellerLayoutProps) {

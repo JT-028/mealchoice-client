@@ -124,7 +124,7 @@ export function SellerDashboard() {
           .header h1 { font-size: 24px; margin-bottom: 5px; }
           .header p { color: #666; }
           .period-badge { background: #f3f4f6; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-top: 10px; }
-          .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+          .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
           .stat-card { background: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; }
           .stat-value { font-size: 28px; font-weight: bold; color: #111; }
           .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
@@ -157,10 +157,6 @@ export function SellerDashboard() {
           <div class="stat-card">
             <div class="stat-value">${analytics?.summary.completedOrders || 0}</div>
             <div class="stat-label">Completed Orders</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">₱${analytics?.summary.averageOrderValue.toFixed(2) || '0.00'}</div>
-            <div class="stat-label">Avg. Order Value</div>
           </div>
         </div>
 
@@ -284,7 +280,7 @@ export function SellerDashboard() {
         ) : (
           <>
             {/* Revenue & Order Stats */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -321,19 +317,6 @@ export function SellerDashboard() {
                   <p className="text-xs text-muted-foreground">
                     {analytics?.summary.completedOrders || 0} completed
                   </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg. Order Value</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ₱{analytics?.summary.averageOrderValue.toFixed(2) || '0.00'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Per completed order</p>
                 </CardContent>
               </Card>
 

@@ -15,6 +15,8 @@ import { SellerOrdersPage } from './pages/seller/SellerOrdersPage';
 import { SellerMessagesPage } from './pages/seller/SellerMessagesPage';
 import { SellerSettingsPage } from './pages/seller/SellerSettingsPage';
 import { InventoryPage } from './pages/seller/InventoryPage';
+import { SellerTutorialPage } from './pages/seller/SellerTutorialPage';
+
 
 // Customer pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
@@ -282,6 +284,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={['seller']}>
                       <SellerSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/seller/tutorial"
+                  element={
+                    <ProtectedRoute allowedRoles={['seller']}>
+                      <SellerTutorialPage />
                     </ProtectedRoute>
                   }
                 />

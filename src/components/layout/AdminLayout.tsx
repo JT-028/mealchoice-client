@@ -34,9 +34,9 @@ interface AdminLayoutProps {
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/sellers', label: 'Sellers', icon: Users },
-  { href: '/admin/customers', label: 'Customers', icon: UserRound },
-  { href: '/admin/admins', label: 'Admins', icon: Shield },
+  { href: '/admin/admins', label: 'System Admin', icon: Shield },
+  { href: '/admin/sellers', label: 'Seller Acc', icon: Users },
+  { href: '/admin/customers', label: 'Customer Acc', icon: UserRound },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

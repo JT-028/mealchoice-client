@@ -256,7 +256,6 @@ export function AdminsPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="e.g., 09171234567"
                   />
                 </div>
                 <div className="space-y-2">
@@ -490,7 +489,6 @@ export function AdminsPage() {
                   type="tel"
                   value={editData.phone}
                   onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="e.g., 09171234567"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-4">

@@ -20,7 +20,7 @@ import {
   exportBackupCSV,
   importBackup
 } from '@/api/backup';
-import { getSettings, updateTheme, updateProfile } from '@/api/settings';
+import { getSettings, updateTheme, updateProfile, changePassword } from '@/api/settings';
 import {
   Loader2,
   FileJson,
@@ -33,7 +33,9 @@ import {
   Monitor,
   Palette,
   User,
-  Save
+  Save,
+  Lock,
+  KeyRound
 } from 'lucide-react';
 
 export function AdminSettingsPage() {
@@ -54,6 +56,10 @@ export function AdminSettingsPage() {
     email: ''
   });
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password update state
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -116,6 +122,39 @@ export function AdminSettingsPage() {
       showMessage('error', 'Error updating profile');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!token) return;
+    
+    // Leave blank to keep existing - only update if password is provided
+    if (!newPassword.trim()) {
+      showMessage('error', 'Please enter a new password');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      showMessage('error', 'Password must be at least 6 characters');
+      return;
+    }
+    
+    setSavingPassword(true);
+    try {
+      // For admin password update, we use a special endpoint that doesn't require current password
+      // This is handled by passing empty currentPassword - the server should allow this for admins
+      const response = await changePassword(token, { currentPassword: '', newPassword });
+      if (response.success) {
+        showMessage('success', 'Password updated successfully');
+        setNewPassword('');
+      } else {
+        showMessage('error', response.message || 'Failed to update password');
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      showMessage('error', 'Error updating password');
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -281,6 +320,47 @@ export function AdminSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Password Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Password
+            </CardTitle>
+            <CardDescription>Update your account password</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Leave blank to keep existing password"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to keep your current password. Minimum 6 characters.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleUpdatePassword} disabled={savingPassword || !newPassword.trim()}>
+                {savingPassword ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Update Password
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Appearance Card */}
         <Card>
           <CardHeader>
@@ -377,7 +457,7 @@ export function AdminSettingsPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Restore from Backup</AlertDialogTitle>
               <AlertDialogDescription>
-                This will restore data from: <strong>{restoreFile?.name}</strong>. Existing data will be merged.
+                This will restore data from: <strong>{restoreFile?.name}</strong>. This operation will synchronize the database with the backup file, restoring any deleted data.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

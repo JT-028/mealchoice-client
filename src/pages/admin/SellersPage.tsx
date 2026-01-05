@@ -83,7 +83,7 @@ export function SellersPage() {
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
-    marketLocation: '',
+    marketLocation: 'San Nicolas Market',
     stallName: '',
     stallNumber: ''
   });
@@ -294,7 +294,8 @@ export function SellersPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Market</TableHead>
-                    <TableHead>Stall</TableHead>
+                    <TableHead>Stall Name</TableHead>
+                    <TableHead>Stall No.</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Verified</TableHead>
                     <TableHead>Joined</TableHead>
@@ -323,11 +324,15 @@ export function SellersPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {seller.stallName || seller.stallNumber ? (
-                          <div className="text-sm">
-                            {seller.stallName && <div className="font-medium">{seller.stallName}</div>}
-                            {seller.stallNumber && <div className="text-muted-foreground">#{seller.stallNumber}</div>}
-                          </div>
+                        {seller.stallName ? (
+                          <span className="font-medium">{seller.stallName}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {seller.stallNumber ? (
+                          <Badge variant="outline">#{seller.stallNumber}</Badge>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -530,7 +535,6 @@ export function SellersPage() {
                   id="create-name"
                   value={createForm.name}
                   onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  placeholder="Seller name"
                   required
                 />
               </div>
@@ -541,7 +545,6 @@ export function SellersPage() {
                   type="email"
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  placeholder="seller@email.com"
                   required
                 />
               </div>
@@ -553,7 +556,7 @@ export function SellersPage() {
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select market" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="San Nicolas Market">San Nicolas Market</SelectItem>
@@ -568,7 +571,6 @@ export function SellersPage() {
                     id="create-stallName"
                     value={createForm.stallName}
                     onChange={(e) => setCreateForm({ ...createForm, stallName: e.target.value })}
-                    placeholder="e.g., Maria's Fresh Produce"
                   />
                 </div>
                 <div className="space-y-2">
@@ -577,7 +579,6 @@ export function SellersPage() {
                     id="create-stallNumber"
                     value={createForm.stallNumber}
                     onChange={(e) => setCreateForm({ ...createForm, stallNumber: e.target.value })}
-                    placeholder="e.g., A-15"
                   />
                 </div>
               </div>

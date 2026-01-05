@@ -64,6 +64,7 @@ export function CustomerSettingsPage() {
   
   // Form states
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -112,6 +113,7 @@ export function CustomerSettingsPage() {
         if (response.success && response.settings) {
           setSettings(response.settings);
           setName(response.settings.name);
+          setPhone(response.settings.phone || '');
           setSelectedTheme(response.settings.theme);
           updateUser({ theme: response.settings.theme });
         }
@@ -235,7 +237,7 @@ export function CustomerSettingsPage() {
     if (!token || !name.trim()) return;
     setSaving(true);
     try {
-      const response = await updateProfile(token, { name: name.trim() });
+      const response = await updateProfile(token, { name: name.trim(), phone: phone.trim() || undefined });
       if (response.success) {
         showMessage('success', 'Profile updated successfully');
       } else {
@@ -382,6 +384,15 @@ export function CustomerSettingsPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="09XX XXX XXXX"
                   />
                 </div>
                 <div className="space-y-2">

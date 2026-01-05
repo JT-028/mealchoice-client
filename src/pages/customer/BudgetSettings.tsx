@@ -40,7 +40,6 @@ export function BudgetSettings() {
         ]);
 
         if (budgetRes.success && budgetRes.budget) {
-          setBudget(budgetRes.budget);
           setFormData({
             dailyLimit: budgetRes.budget.dailyLimit,
             weeklyLimit: budgetRes.budget.weeklyLimit,
@@ -83,7 +82,6 @@ export function BudgetSettings() {
     try {
       const response = await updateBudget(token, formData);
       if (response.success && response.budget) {
-        setBudget(response.budget);
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } else {
@@ -101,6 +99,7 @@ export function BudgetSettings() {
   const weeklySpent = spending?.weeklySpent || 0;
   
   const dailyRemaining = Math.max(0, formData.dailyLimit - todaySpent);
+  const weeklyRemaining = Math.max(0, formData.weeklyLimit - weeklySpent);
   // Calculate percentage used for visual bar
   const dailyPercentUsed = formData.dailyLimit > 0 ? (todaySpent / formData.dailyLimit) * 100 : 0;
   const weeklyPercentUsed = formData.weeklyLimit > 0 ? (weeklySpent / formData.weeklyLimit) * 100 : 0;

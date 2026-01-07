@@ -31,9 +31,9 @@ export interface RecommendationResponse {
 }
 
 export interface MealPlanDay {
-  breakfast: { mealName: string; calories: number; description: string; imageUrl?: string; ingredients?: string[] };
-  lunch: { mealName: string; calories: number; description: string; imageUrl?: string; ingredients?: string[] };
-  dinner: { mealName: string; calories: number; description: string; imageUrl?: string; ingredients?: string[] };
+  breakfast: Recommendation;
+  lunch: Recommendation;
+  dinner: Recommendation;
 }
 
 export interface MealPlanResponse {

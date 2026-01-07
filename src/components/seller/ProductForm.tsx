@@ -19,8 +19,9 @@ import {
   type ProductFormData,
   PRODUCT_CATEGORIES,
   PRODUCT_UNITS,
+  PRODUCT_TYPES,
 } from '@/api/products';
-import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
+import { Loader2, Upload, X, ImageIcon, Plus } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
 
 interface ProductFormProps {
@@ -41,9 +42,13 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     quantity: product?.quantity || 0,
     unit: product?.unit || 'piece',
     category: product?.category || 'others',
+    productType: product?.productType || 'perishable',
     isAvailable: product?.isAvailable ?? true,
     lowStockThreshold: product?.lowStockThreshold || 10,
   });
+
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
@@ -61,7 +66,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
         return;
       }
-      
+
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Image file size must be less than 5MB');
@@ -106,7 +111,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     try {
       let response;
       let productId: string;
-      
+
       if (isEditing && product) {
         response = await updateProduct(token, product._id, formData);
         productId = product._id;
@@ -168,7 +173,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
             )}
           </div>
-          
+
           {/* Upload Button */}
           <div className="flex-1">
             <input
@@ -248,8 +253,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         </div>
       </div>
 
-      {/* Unit and Category Row */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Unit, Category, and Product Type Row */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Unit *</Label>
           <Select
@@ -271,18 +276,75 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         </div>
         <div className="space-y-2">
           <Label>Category *</Label>
+          {showCustomCategory ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="New category name"
+                value={customCategoryName}
+                onChange={(e) => setCustomCategoryName(e.target.value)}
+                disabled={loading}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => {
+                  if (customCategoryName.trim()) {
+                    setFormData({ ...formData, category: customCategoryName.trim().toLowerCase() });
+                  }
+                  setShowCustomCategory(false);
+                  setCustomCategoryName('');
+                }}
+                disabled={loading || !customCategoryName.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Select
+              value={formData.category}
+              onValueChange={(value) => {
+                if (value === '__add_new__') {
+                  setShowCustomCategory(true);
+                } else {
+                  setFormData({ ...formData, category: value });
+                }
+              }}
+              disabled={loading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__add_new__" className="text-primary font-medium">
+                  <span className="flex items-center gap-1">
+                    <Plus className="h-3 w-3" /> Add New Category
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label>Product Type *</Label>
           <Select
-            value={formData.category}
-            onValueChange={(value) => setFormData({ ...formData, category: value })}
+            value={formData.productType || 'perishable'}
+            onValueChange={(value) => setFormData({ ...formData, productType: value as 'perishable' | 'non-perishable' })}
             disabled={loading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCT_CATEGORIES.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
+              {PRODUCT_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -10,6 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSellerOrders, updateOrderStatus, verifyPayment, archiveOrder, bulkArchiveOrders, type Order } from '@/api/orders';
 import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   Package,
   Loader2,
   Clock,
@@ -22,7 +27,10 @@ import {
   ArchiveRestore,
   Search,
   Calendar,
-  X
+  X,
+  ExternalLink,
+  Eye,
+  FileImage
 } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
 
@@ -540,31 +548,57 @@ export function SellerOrdersPage() {
 
                             {/* Payment Proof Image (QR only) */}
                             {order.paymentProof && (
-                              <div className="mt-3">
-                                <p className="text-xs text-muted-foreground mb-2">Payment Receipt:</p>
+                              <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <FileImage className="h-4 w-4 text-primary" />
+                                  <span className="text-sm font-semibold">Payment Receipt</span>
+                                </div>
                                 <div className="flex items-start gap-4">
-                                  <div className="h-24 w-24 bg-muted rounded border overflow-hidden shrink-0">
-                                    <a
-                                      href={getImageUrl(order.paymentProof!)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="block h-full w-full"
-                                    >
-                                      <img
-                                        src={getImageUrl(order.paymentProof!)}
-                                        alt="Payment Receipt"
-                                        className="h-full w-full object-cover hover:opacity-80 transition-opacity"
-                                      />
-                                    </a>
-                                  </div>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <div className="group relative h-24 w-24 bg-muted rounded border overflow-hidden shrink-0 cursor-zoom-in">
+                                        <img
+                                          src={getImageUrl(order.paymentProof!)}
+                                          alt="Payment Receipt"
+                                          className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                                          <Eye className="h-6 w-6 text-white" />
+                                        </div>
+                                      </div>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-3xl border-none bg-transparent shadow-none p-0 overflow-hidden">
+                                      <div className="relative w-full h-[80vh] flex items-center justify-center bg-black/90 p-4 rounded-lg">
+                                        <img
+                                          src={getImageUrl(order.paymentProof!)}
+                                          alt="Full Payment Receipt"
+                                          className="max-w-full max-h-full object-contain"
+                                        />
+                                        <div className="absolute top-4 right-4 flex gap-2">
+                                          <a
+                                            href={getImageUrl(order.paymentProof!)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="h-9 w-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-colors"
+                                            title="Open Original"
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+
                                   {!order.isPaymentVerified && (
-                                    <div className="flex flex-col gap-2 justify-center">
-                                      <p className="text-xs text-muted-foreground">Confirm receipt of QR payment before marking as verified.</p>
+                                    <div className="flex flex-col gap-2 flex-1">
+                                      <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Please confirm the receipt of funds in your payment account matching the order total before verifying.
+                                      </p>
                                       <Button
                                         size="sm"
                                         onClick={() => handleVerifyPayment(order._id)}
                                         disabled={isVerifying}
-                                        className="w-fit"
+                                        className="w-fit bg-green-600 hover:bg-green-700 text-white"
                                       >
                                         {isVerifying ? (
                                           <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -573,6 +607,12 @@ export function SellerOrdersPage() {
                                         )}
                                         Verify QR Payment
                                       </Button>
+                                    </div>
+                                  )}
+                                  {order.isPaymentVerified && (
+                                    <div className="flex-1 flex items-center text-green-600 text-xs font-medium bg-green-500/10 h-10 px-3 rounded-md border border-green-500/20">
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Payment verified and confirmed.
                                     </div>
                                   )}
                                 </div>

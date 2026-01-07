@@ -8,6 +8,7 @@ export interface Product {
   quantity: number;
   unit: string;
   category: string;
+  productType?: 'perishable' | 'non-perishable';
   seller: string | { _id: string; name: string };
   marketLocation: string;
   isAvailable: boolean;
@@ -25,6 +26,7 @@ export interface ProductFormData {
   quantity: number;
   unit: string;
   category: string;
+  productType?: 'perishable' | 'non-perishable';
   marketLocation?: string;
   isAvailable?: boolean;
   lowStockThreshold?: number;
@@ -186,10 +188,14 @@ export const PRODUCT_UNITS = [
   { value: 'ml', label: 'Milliliter (ml)' },
 ];
 
-// Market locations
 export const MARKET_LOCATIONS = [
   { value: 'San Nicolas Market', label: 'San Nicolas Market' },
   { value: 'Pampang Public Market', label: 'Pampang Public Market' },
+];
+
+export const PRODUCT_TYPES = [
+  { value: 'perishable', label: 'Perishable' },
+  { value: 'non-perishable', label: 'Non-Perishable' },
 ];
 
 // Bulk delete products

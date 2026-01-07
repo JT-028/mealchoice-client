@@ -9,9 +9,31 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { getMyOrders, type Order } from '@/api/orders';
+import {
+  getMyOrders,
+  cancelOrderByCustomer,
+  hideOrderForBuyer,
+  bulkHideOrdersForBuyer,
+  type Order
+} from '@/api/orders';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Package,
   Loader2,
@@ -24,7 +46,12 @@ import {
   Printer,
   Truck,
   Store,
-  Home
+  Home,
+  Download,
+  Eye,
+  FileImage,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
 
@@ -48,27 +75,45 @@ export function OrdersPage() {
   const [activeTab, setActiveTab] = useState<TabType>('active');
   const summaryRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!token) return;
+  // New states for cancellation and removal
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
-      try {
-        const response = await getMyOrders(token);
-        if (response.success && response.orders) {
-          setOrders(response.orders);
-        }
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
+  const cancellationReasons = [
+    "Changed my mind",
+    "Found a better price elsewhere",
+    "Ordering mistake (wrong item/quantity)",
+    "Seller is unresponsive",
+    "Delivery time is too long",
+    "Others"
+  ];
+
+  const fetchOrders = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const response = await getMyOrders(token);
+      if (response.success && response.orders) {
+        setOrders(response.orders);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to load orders');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrders();
   }, [token]);
 
   // Categorize orders
-  const activeOrders = orders.filter(o => 
+  const activeOrders = orders.filter(o =>
     ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)
   );
   const completedOrders = orders.filter(o => o.status === 'completed');
@@ -147,48 +192,220 @@ export function OrdersPage() {
     }, 1000);
   };
 
+  const handleCancelOrder = async () => {
+    if (!cancellingOrderId || !token) return;
+
+    const finalReason = cancellationReason === "Others" ? customReason : cancellationReason;
+    if (!finalReason) {
+      toast.error('Please provide a reason for cancellation');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await cancelOrderByCustomer(token, cancellingOrderId, finalReason);
+      if (response.success) {
+        toast.success('Order cancelled successfully');
+        setCancellingOrderId(null);
+        setCancellationReason('');
+        setCustomReason('');
+        fetchOrders();
+      } else {
+        toast.error(response.message || 'Failed to cancel order');
+      }
+    } catch (error) {
+      toast.error('An error occurred while cancelling the order');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleHideOrder = async (orderId: string) => {
+    if (!token) return;
+    try {
+      const response = await hideOrderForBuyer(token, orderId);
+      if (response.success) {
+        toast.success('Order removed from history');
+        fetchOrders();
+      }
+    } catch (error) {
+      toast.error('Failed to remove order');
+    }
+  };
+
+  const handleBulkHide = async () => {
+    if (!token || selectedOrderIds.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const response = await bulkHideOrdersForBuyer(token, selectedOrderIds);
+      if (response.success) {
+        toast.success(`${response.count} order(s) removed from history`);
+        setSelectedOrderIds([]);
+        setShowBulkConfirm(false);
+        fetchOrders();
+      }
+    } catch (error) {
+      toast.error('Failed to remove orders');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const toggleSelectOrder = (orderId: string) => {
+    setSelectedOrderIds(prev =>
+      prev.includes(orderId)
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const selectAllInTab = (tabOrders: Order[]) => {
+    const filteredOrders = tabOrders.filter(o => ['completed', 'cancelled'].includes(o.status));
+    if (selectedOrderIds.length === filteredOrders.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(filteredOrders.map(o => o._id));
+    }
+  };
+
+  const handleExportAllOrders = () => {
+    if (orders.length === 0) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-10000px';
+    iframe.style.left = '-10000px';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const orderRows = orders.map(order => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">#${order._id.slice(-8).toUpperCase()}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${new Date(order.createdAt).toLocaleDateString()}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${order.seller && typeof order.seller === 'object' ? order.seller.name : 'Seller'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${order.marketLocation}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${order.deliveryType === 'delivery' ? order.deliveryAddress?.fullAddress || 'Delivery' : 'Pickup'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${order.items.length} item(s)</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">₱${order.total.toFixed(2)}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${order.status}</td>
+      </tr>
+    `).join('');
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Order History - MealChoice</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            h1 { color: #4CAF50; font-size: 24px; }
+            .header { border-bottom: 2px solid #4CAF50; padding-bottom: 10px; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background: #f5f5f5; font-weight: bold; }
+            .footer { margin-top: 30px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>MealChoice Order History</h1>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+          </div>
+          <table>
+            <thead>
+              <tr style="background: #f5f5f5">
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Seller</th>
+                <th>Market</th>
+                <th>Location</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderRows}
+            </tbody>
+          </table>
+          <div class="footer">
+            <p>Total Orders: ${orders.length}</p>
+            <p>Thank you for ordering with MealChoice!</p>
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    iframe.contentWindow?.focus();
+    iframe.contentWindow?.print();
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  };
+
   const renderOrderCard = (order: Order) => {
     const status = statusConfig[order.status] || statusConfig.pending;
     const isDelivery = order.deliveryType === 'delivery';
+    const canCancel = ['pending', 'confirmed'].includes(order.status);
+    const canRemove = ['completed', 'cancelled'].includes(order.status);
+    const isSelected = selectedOrderIds.includes(order._id);
 
     return (
-      <Card key={order._id}>
+      <Card key={order._id} className={isSelected ? 'border-primary ring-1 ring-primary' : ''}>
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-base">
-                Order from {order.seller && typeof order.seller === 'object' ? order.seller.name : 'Seller'}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                <MapPin className="h-3 w-3" />
-                {order.marketLocation}
-                {order.seller?.stallNumber && ` • Stall ${order.seller.stallNumber}`}
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <Badge variant="outline" className={`${status.color} gap-1`}>
-                {status.icon}
-                {status.label}
-              </Badge>
-              <Badge variant="outline" className="gap-1 text-xs">
-                {isDelivery ? (
-                  <>
-                    <Truck className="h-3 w-3" />
-                    Delivery
-                  </>
-                ) : (
-                  <>
-                    <Store className="h-3 w-3" />
-                    Pickup
-                  </>
-                )}
-              </Badge>
+          <div className="flex items-start gap-4">
+            {canRemove && (
+              <div className="pt-1">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleSelectOrder(order._id)}
+                />
+              </div>
+            )}
+            <div className="flex-1">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-base">
+                    Order from {order.seller && typeof order.seller === 'object' ? order.seller.name : 'Seller'}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <MapPin className="h-3 w-3" />
+                    {order.marketLocation}
+                    {order.seller?.stallNumber && ` • Stall ${order.seller.stallNumber}`}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant="outline" className={`${status.color} gap-1 shadow-none`}>
+                    {status.icon}
+                    {status.label}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 text-xs shadow-none">
+                    {isDelivery ? (
+                      <>
+                        <Truck className="h-3 w-3" />
+                        Delivery
+                      </>
+                    ) : (
+                      <>
+                        <Store className="h-3 w-3" />
+                        Pickup
+                      </>
+                    )}
+                  </Badge>
+                </div>
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {/* Items */}
+            {/* ... items and total part remains the same ... */}
+            {/* (I will replace the whole renderOrderCard for correctness) */}
             <div className="space-y-2">
               {order.items.slice(0, 2).map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3 text-sm">
@@ -218,7 +435,6 @@ export function OrdersPage() {
               )}
             </div>
 
-            {/* Delivery Address Preview */}
             {isDelivery && order.deliveryAddress?.fullAddress && (
               <div className="flex items-start gap-2 p-2 bg-muted/50 rounded-lg text-sm">
                 <Home className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -230,22 +446,46 @@ export function OrdersPage() {
 
             <div className="border-t pt-2 flex justify-between font-semibold">
               <span>Total</span>
-              <span className="text-primary">₱{order.total.toFixed(2)}</span>
+              <span className="text-primary font-bold">₱{order.total.toFixed(2)}</span>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 gap-3">
+              <p className="text-xs text-muted-foreground order-2 sm:order-1">
                 Ordered on {formatDate(order.createdAt)}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => handleViewSummary(order)}
-              >
-                <FileText className="h-4 w-4" />
-                View Summary
-              </Button>
+              <div className="flex items-center gap-2 order-1 sm:order-2">
+                {canCancel && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 h-8 px-2"
+                    onClick={() => setCancellingOrderId(order._id)}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Cancel Order
+                  </Button>
+                )}
+                {canRemove && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5 h-8 px-2"
+                    onClick={() => handleHideOrder(order._id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-8 px-2 border-primary/20 hover:border-primary/50 text-primary"
+                  onClick={() => handleViewSummary(order)}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Details
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -259,7 +499,7 @@ export function OrdersPage() {
       completed: { title: 'No completed orders', desc: 'Orders you\'ve received will appear here.' },
       cancelled: { title: 'No cancelled orders', desc: 'Cancelled orders will appear here.' }
     };
-    
+
     return (
       <div className="text-center py-12 border rounded-lg border-dashed">
         <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -272,9 +512,17 @@ export function OrdersPage() {
   return (
     <CustomerLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
-          <p className="text-muted-foreground">Track your order history and status</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
+            <p className="text-muted-foreground">Track your order history and status</p>
+          </div>
+          {orders.length > 0 && (
+            <Button onClick={handleExportAllOrders} variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export PDF
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -310,22 +558,133 @@ export function OrdersPage() {
               </TabsTrigger>
             </TabsList>
 
-            {(['active', 'completed', 'cancelled'] as const).map((tab) => (
-              <TabsContent key={tab} value={tab} className="mt-4">
-                {getOrdersByTab(tab).length === 0 ? (
-                  renderEmptyState(tab)
-                ) : (
-                  <div className="space-y-4">
-                    {getOrdersByTab(tab).map(renderOrderCard)}
-                  </div>
-                )}
-              </TabsContent>
-            ))}
+            <div className="min-h-[400px]">
+              {(['active', 'completed', 'cancelled'] as const).map((tab) => (
+                <TabsContent key={tab} value={tab} className="mt-4 outline-none">
+                  {getOrdersByTab(tab).length === 0 ? (
+                    renderEmptyState(tab)
+                  ) : (
+                    <div className="space-y-4">
+                      {tab !== 'active' && getOrdersByTab(tab).length > 0 && (
+                        <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedOrderIds.length === getOrdersByTab(tab).filter(o => ['completed', 'cancelled'].includes(o.status)).length && getOrdersByTab(tab).filter(o => ['completed', 'cancelled'].includes(o.status)).length > 0}
+                              onCheckedChange={() => selectAllInTab(getOrdersByTab(tab))}
+                            />
+                            <span className="text-sm font-medium">Select All</span>
+                          </div>
+                          {selectedOrderIds.length > 0 && (
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-muted-foreground font-medium">
+                                {selectedOrderIds.length} selected
+                              </span>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 gap-1.5"
+                                onClick={() => setShowBulkConfirm(true)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Remove Selected
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                        {getOrdersByTab(tab).map(renderOrderCard)}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              ))}
+            </div>
           </Tabs>
         )}
       </div>
 
-      {/* Order Summary Modal */}
+      {/* Cancellation Reason Dialog */}
+      <Dialog open={!!cancellingOrderId} onOpenChange={(open) => !open && setCancellingOrderId(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Cancel Order</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              We're sorry to see you cancel. Please tell us why you're cancelling this order.
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <RadioGroup value={cancellationReason} onValueChange={setCancellationReason}>
+              {cancellationReasons.map((reason) => (
+                <div key={reason} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value={reason} id={reason} />
+                  <Label htmlFor={reason} className="flex-1 cursor-pointer text-sm font-medium">{reason}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+
+            {cancellationReason === "Others" && (
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="custom-reason">Explain your reason</Label>
+                <Textarea
+                  id="custom-reason"
+                  placeholder="Tell us what happened..."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  className="resize-none"
+                />
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setCancellingOrderId(null)}
+              className="flex-1"
+              disabled={isProcessing}
+            >
+              Wait, don't cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelOrder}
+              className="flex-1 gap-2"
+              disabled={isProcessing || !cancellationReason || (cancellationReason === "Others" && !customReason)}
+            >
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Cancellation"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Hide Confirmation */}
+      <AlertDialog open={showBulkConfirm} onOpenChange={setShowBulkConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Remove Multiple Orders
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {selectedOrderIds.length} orders from your history?
+              This will hide them from your view but they will still be recorded for seller analytics.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleBulkHide(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isProcessing}
+            >
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Yes, remove them"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Order Summary Modal - remains largely the same ... */}
       <Dialog open={showSummary} onOpenChange={setShowSummary}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -438,7 +797,49 @@ export function OrdersPage() {
                   {selectedOrder.notes && (
                     <p><strong>Notes:</strong> {selectedOrder.notes}</p>
                   )}
+                  <div className="mt-1 flex items-center gap-2">
+                    <strong>Payment:</strong>
+                    {selectedOrder.paymentMethod === 'cod' ? 'Cash on Delivery' : 'QR Payment'}
+                    {selectedOrder.isPaymentVerified ? (
+                      <Badge variant="outline" className="text-green-600 bg-green-500/10 border-green-500/20 text-[10px] h-5">Verified</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-yellow-600 bg-yellow-500/10 border-yellow-500/20 text-[10px] h-5">Unverified</Badge>
+                    )}
+                  </div>
                 </div>
+
+                {/* Customer Receipt Preview */}
+                {selectedOrder.paymentProof && (
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileImage className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold">Your Payment Receipt</span>
+                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <div className="group relative h-20 w-20 bg-muted rounded border overflow-hidden shrink-0 cursor-zoom-in">
+                          <img
+                            src={getImageUrl(selectedOrder.paymentProof!)}
+                            alt="Your Receipt"
+                            className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                            <Eye className="h-5 w-5 text-white" />
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl border-none bg-transparent shadow-none p-0 overflow-hidden">
+                        <div className="relative w-full h-[80vh] flex items-center justify-center bg-black/90 p-4 rounded-lg">
+                          <img
+                            src={getImageUrl(selectedOrder.paymentProof!)}
+                            alt="Full Receipt"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t">

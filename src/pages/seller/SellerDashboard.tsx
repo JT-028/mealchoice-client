@@ -14,11 +14,11 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
   LineChart,
-  Line
+  Line,
+  BarChart,
+  Bar
 } from 'recharts';
 import {
   Package,
@@ -64,7 +64,7 @@ export function SellerDashboard() {
         setLoading(false);
         return;
       }
-      
+
       try {
         const response = await getSellerProducts(token);
         if (response.success && response.products) {
@@ -88,7 +88,7 @@ export function SellerDashboard() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       if (!token || !user?.isVerified) return;
-      
+
       setAnalyticsLoading(true);
       try {
         const response = await getSellerAnalytics(token, { period });
@@ -374,35 +374,29 @@ export function SellerDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Order Status Distribution */}
+              {/* Order Status Distribution - Now a Bar Chart */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5 text-primary" />
-                    Order Status
+                    Order Status Distribution
                   </CardTitle>
-                  <CardDescription>Distribution of order statuses</CardDescription>
+                  <CardDescription>Breakdown by order status</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {statusChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={250}>
-                      <PieChart>
-                        <Pie
-                          data={statusChartData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                          labelLine={false}
-                        >
+                      <BarChart data={statusChartData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis type="number" tick={{ fontSize: 11 }} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
+                        <Tooltip />
+                        <Bar dataKey="value" name="Orders" radius={[0, 4, 4, 0]}>
                           {statusChartData.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                           ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
+                        </Bar>
+                      </BarChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-[250px] text-muted-foreground">

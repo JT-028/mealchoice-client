@@ -142,7 +142,7 @@ export default function AIRecommendationsPage() {
       toast.error("Please select at least one category to generate.");
       return;
     }
-    
+
     // Process sequentially to avoid overwhelming the server/rate limits
     for (const category of selectedCategories) {
       await fetchCategoryRecommendations(category);
@@ -151,8 +151,8 @@ export default function AIRecommendationsPage() {
   };
 
   const toggleCategorySelection = (category: MealCategory) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
+    setSelectedCategories(prev =>
+      prev.includes(category)
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
@@ -172,15 +172,8 @@ export default function AIRecommendationsPage() {
     try {
       setSavingMeal(mealKey);
 
-      // Calculate the date for the selected day
-      const today = new Date();
-      const currentDayIndex = today.getDay();
-      const targetDayIndex = weekDays.indexOf(selectedDay);
-      let daysToAdd = targetDayIndex - currentDayIndex;
-      if (daysToAdd < 0) daysToAdd += 7; // If the day has passed this week, schedule for next week
-
-      const scheduledDate = new Date(today);
-      scheduledDate.setDate(today.getDate() + daysToAdd);
+      // Use the specific date selected by the user
+      const scheduledDate = new Date(selectedDay);
       scheduledDate.setHours(0, 0, 0, 0);
 
       await saveMeal(token, selectedMealToSave, scheduledDate, activeTab);
@@ -250,7 +243,7 @@ export default function AIRecommendationsPage() {
 
         {/* Category Tabs Section */}
         <div className="relative z-10 -mt-20 px-6 lg:px-12 pb-24">
-          
+
           {/* Checklist & Generate All */}
           <Card className="mb-8 border-none shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <CardContent className="p-6">
@@ -261,8 +254,8 @@ export default function AIRecommendationsPage() {
                   </div>
                   {mealCategories.map((cat) => (
                     <div key={cat.id} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`check-${cat.id}`} 
+                      <Checkbox
+                        id={`check-${cat.id}`}
                         checked={selectedCategories.includes(cat.id)}
                         onCheckedChange={() => toggleCategorySelection(cat.id)}
                       />
@@ -275,9 +268,9 @@ export default function AIRecommendationsPage() {
                     </div>
                   ))}
                 </div>
-                
-                <Button 
-                  size="lg" 
+
+                <Button
+                  size="lg"
                   onClick={handleGenerateAll}
                   disabled={Object.values(loadingCategories).some(Boolean) || selectedCategories.length === 0}
                   className="w-full md:w-auto shadow-md hover:shadow-xl transition-all"
@@ -510,21 +503,26 @@ export default function AIRecommendationsPage() {
               Save to Schedule
             </DialogTitle>
             <DialogDescription>
-              Choose which day to schedule "{selectedMealToSave?.mealName}" for {activeTab}.
+              Choose a specific date to schedule "{selectedMealToSave?.mealName}" for {activeTab}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-2 py-4">
-            {weekDays.map(day => (
-              <Button
-                key={day}
-                variant={selectedDay === day ? "default" : "outline"}
-                className="justify-start"
-                onClick={() => setSelectedDay(day)}
-              >
-                {day}
-              </Button>
-            ))}
+          <div className="py-6">
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Select Date
+            </label>
+            <input
+              type="date"
+              className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              value={selectedDay ? new Date(selectedDay).toISOString().split('T')[0] : ''}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                const date = new Date(e.target.value);
+                setSelectedDay(weekDays[date.getDay()]); // Keep compatibility with day-based UI if needed, but we'll use the actual date below
+                // We'll actually store the full date string as selectedDay or add a new state
+                setSelectedDay(e.target.value);
+              }}
+            />
           </div>
 
           <DialogFooter>

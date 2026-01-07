@@ -180,14 +180,31 @@ export function CustomerLayout({ children, noPadding = false }: CustomerLayoutPr
 
           {/* Logout */}
           <div className="p-3 border-t border-border space-y-1">
-            <Button
-              variant="ghost"
-              onClick={handleResetOnboarding}
-              className="w-full justify-start gap-3 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-            >
-              <RotateCcw className="h-5 w-5" />
-              Reset Onboarding
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                >
+                  <RotateCcw className="h-5 w-5" />
+                  Reset Onboarding
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset Onboarding?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will take you back to the onboarding process to update your preferences and dietary information.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetOnboarding}>
+                    Reset Onboarding
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>

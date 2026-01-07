@@ -31,8 +31,10 @@ import {
   Printer,
   DollarSign,
   Calendar,
-  XCircle
+  XCircle,
+  Store,
 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 const PERIOD_OPTIONS = [
   { value: 'today', label: 'Today' },
@@ -42,7 +44,7 @@ const PERIOD_OPTIONS = [
   { value: 'all', label: 'All Time' }
 ];
 
-const PIE_COLORS = ['#22c55e', '#eab308', '#3b82f6', '#a855f7', '#06b6d4', '#ef4444'];
+const COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export function SellerDashboard() {
   const { token, user } = useAuth();
@@ -225,15 +227,6 @@ export function SellerDashboard() {
   }
 
   // Prepare chart data
-  const statusChartData = analytics ? [
-    { name: 'Pending', value: analytics.statusBreakdown.pending },
-    { name: 'Confirmed', value: analytics.statusBreakdown.confirmed },
-    { name: 'Preparing', value: analytics.statusBreakdown.preparing },
-    { name: 'Ready', value: analytics.statusBreakdown.ready },
-    { name: 'Completed', value: analytics.statusBreakdown.completed },
-    { name: 'Cancelled', value: analytics.statusBreakdown.cancelled }
-  ].filter(d => d.value > 0) : [];
-
   const salesChartData = analytics?.salesOverTime.map(d => ({
     date: new Date(d.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }),
     revenue: d.revenue,
@@ -374,33 +367,44 @@ export function SellerDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Order Status Distribution - Now a Bar Chart */}
+              {/* Market Performance Comparison - San Nicolas vs Pampang */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5 text-primary" />
-                    Order Status Distribution
+                    <Store className="h-5 w-5 text-primary" />
+                    Market Performance comparison
                   </CardTitle>
-                  <CardDescription>Breakdown by order status</CardDescription>
+                  <CardDescription>Top selling market establishments by revenue</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {statusChartData.length > 0 ? (
+                  {analytics?.marketComparison && analytics.marketComparison.some(m => m.revenue > 0) ? (
                     <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={statusChartData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis type="number" tick={{ fontSize: 11 }} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
-                        <Tooltip />
-                        <Bar dataKey="value" name="Orders" radius={[0, 4, 4, 0]}>
-                          {statusChartData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      <BarChart data={analytics.marketComparison}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(val) => `₱${val >= 1000 ? val / 1000 + 'k' : val}`} />
+                        <Tooltip
+                          formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Revenue']}
+                          contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                        />
+                        <Bar
+                          dataKey="revenue"
+                          name="Revenue"
+                          radius={[4, 4, 0, 0]}
+                          barSize={60}
+                        >
+                          {analytics.marketComparison.map((_entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                            />
                           ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-                      No orders for this period
+                      No market comparison data available for this period
                     </div>
                   )}
                 </CardContent>

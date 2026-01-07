@@ -259,6 +259,11 @@ export interface SellerAnalytics {
     orders: number;
     revenue: number;
   }>;
+  marketComparison: Array<{
+    name: string;
+    revenue: number;
+    orders: number;
+  }>;
 }
 
 export interface AnalyticsResponse {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -55,10 +55,22 @@ export function BrowseProducts() {
     return () => clearTimeout(debounce);
   }, [selectedCategory, selectedMarket, searchQuery]);
 
-  const categories = [
-    { value: 'all', label: 'All' },
-    ...PRODUCT_CATEGORIES
-  ];
+  const categories = useMemo(() => {
+    const dynamicCategories = new Set(products.map(p => p.category.toLowerCase()));
+    const allCategories = [
+      { value: 'all', label: 'All' },
+      ...PRODUCT_CATEGORIES
+    ];
+
+    // Add any dynamic categories that aren't in the standard list
+    dynamicCategories.forEach(cat => {
+      if (!PRODUCT_CATEGORIES.some(c => c.value === cat)) {
+        allCategories.push({ value: cat, label: cat.charAt(0).toUpperCase() + cat.slice(1) });
+      }
+    });
+
+    return allCategories;
+  }, [products]);
 
   const getQuantity = (productId: string) => quantities[productId] || 1;
 

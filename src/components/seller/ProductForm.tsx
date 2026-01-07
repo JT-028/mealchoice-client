@@ -21,16 +21,17 @@ import {
   PRODUCT_UNITS,
   PRODUCT_TYPES,
 } from '@/api/products';
-import { Loader2, Upload, X, ImageIcon, Plus } from 'lucide-react';
+import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
 
 interface ProductFormProps {
   product?: Product | null;
+  existingCategories?: string[];
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
+export function ProductForm({ product, existingCategories = [], onSuccess, onCancel }: ProductFormProps) {
   const { token } = useAuth();
   const isEditing = !!product;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,9 +47,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     isAvailable: product?.isAvailable ?? true,
     lowStockThreshold: product?.lowStockThreshold || 10,
   });
-
-  const [showCustomCategory, setShowCustomCategory] = useState(false);
-  const [customCategoryName, setCustomCategoryName] = useState('');
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(
@@ -112,11 +110,20 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       let response;
       let productId: string;
 
+      // Handle category logic
+      const submitData = { ...formData };
+
+      if (!submitData.category) {
+        setError('Please select a category');
+        setLoading(false);
+        return;
+      }
+
       if (isEditing && product) {
-        response = await updateProduct(token, product._id, formData);
+        response = await updateProduct(token, product._id, submitData);
         productId = product._id;
       } else {
-        response = await createProduct(token, formData);
+        response = await createProduct(token, submitData);
         productId = response.product?._id || '';
       }
 
@@ -254,7 +261,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       </div>
 
       {/* Unit, Category, and Product Type Row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.5fr_1fr] gap-4">
         <div className="space-y-2">
           <Label>Unit *</Label>
           <Select
@@ -276,60 +283,47 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         </div>
         <div className="space-y-2">
           <Label>Category *</Label>
-          {showCustomCategory ? (
-            <div className="flex gap-2">
-              <Input
-                placeholder="New category name"
-                value={customCategoryName}
-                onChange={(e) => setCustomCategoryName(e.target.value)}
-                disabled={loading}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                onClick={() => {
-                  if (customCategoryName.trim()) {
-                    setFormData({ ...formData, category: customCategoryName.trim().toLowerCase() });
-                  }
-                  setShowCustomCategory(false);
-                  setCustomCategoryName('');
-                }}
-                disabled={loading || !customCategoryName.trim()}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <Select
-              value={formData.category}
-              onValueChange={(value) => {
-                if (value === '__add_new__') {
-                  setShowCustomCategory(true);
-                } else {
-                  setFormData({ ...formData, category: value });
-                }
-              }}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {PRODUCT_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-                <SelectItem value="__add_new__" className="text-primary font-medium">
-                  <span className="flex items-center gap-1">
-                    <Plus className="h-3 w-3" /> Add New Category
-                  </span>
+          <Select
+            value={formData.category}
+            onValueChange={(value) => setFormData({ ...formData, category: value })}
+            disabled={loading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {/* Standard categories except 'others' */}
+              {PRODUCT_CATEGORIES.filter(cat => cat.value !== 'others').map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
                 </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+              ))}
+
+              {/* Existing custom categories from other products and settings */}
+              {existingCategories
+                .filter(cat => cat && !PRODUCT_CATEGORIES.some(c => c.value === cat))
+                .map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    <span className="capitalize">{cat}</span>
+                  </SelectItem>
+                ))
+              }
+
+              {/* Current custom category if not in lists */}
+              {formData.category &&
+                !PRODUCT_CATEGORIES.some(c => c.value === formData.category) &&
+                !existingCategories.includes(formData.category) && (
+                  <SelectItem value={formData.category}>
+                    <span className="capitalize">{formData.category}</span>
+                  </SelectItem>
+                )}
+
+              {/* Always 'Others' at the very bottom */}
+              <SelectItem value="others" className="border-t mt-1">
+                Others
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Product Type *</Label>

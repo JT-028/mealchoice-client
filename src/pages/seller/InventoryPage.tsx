@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSellerProducts, updateProduct, type Product } from '@/api/products';
+import { getSettings, updateSellerSettings as updateSellerApi } from '@/api/settings';
+import { toast } from 'sonner';
 import {
   Package,
   AlertTriangle,
@@ -19,7 +21,6 @@ import {
   Plus,
   X
 } from 'lucide-react';
-import { getSettings } from '@/api/settings';
 
 const DEFAULT_CATEGORIES = ['vegetables', 'fruits', 'meat', 'seafood', 'grains', 'dairy', 'spices', 'others'];
 
@@ -30,11 +31,14 @@ export function InventoryPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [editedProducts, setEditedProducts] = useState<Record<string, { quantity?: number; lowStockThreshold?: number; isAvailable?: boolean }>>({});
-  
+
   // Custom categories state
   const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [lastSavedCategories, setLastSavedCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [savingCategories, setSavingCategories] = useState(false);
+
+  const isCategoriesDirty = JSON.stringify(customCategories) !== JSON.stringify(lastSavedCategories);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,12 +48,14 @@ export function InventoryPage() {
           getSellerProducts(token),
           getSettings(token)
         ]);
-        
+
         if (productsRes.success && productsRes.products) {
           setProducts(productsRes.products);
         }
         if (settingsRes.success && settingsRes.settings) {
-          setCustomCategories(settingsRes.settings.customCategories || []);
+          const cats = settingsRes.settings.customCategories || [];
+          setCustomCategories(cats);
+          setLastSavedCategories(cats);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -96,7 +102,7 @@ export function InventoryPage() {
         lowStockThreshold: changes.lowStockThreshold ?? product.lowStockThreshold,
         isAvailable: changes.isAvailable ?? product.isAvailable
       });
-      
+
       if (response.success && response.product) {
         setProducts(prev => prev.map(p => p._id === product._id ? response.product! : p));
         setEditedProducts(prev => {
@@ -104,9 +110,13 @@ export function InventoryPage() {
           delete updated[product._id];
           return updated;
         });
+        toast.success(`Updated ${product.name}`);
+      } else {
+        toast.error(response.message || 'Failed to update product');
       }
     } catch (error) {
       console.error('Error updating product:', error);
+      toast.error('Server error. Please try again.');
     } finally {
       setSaving(null);
     }
@@ -127,10 +137,22 @@ export function InventoryPage() {
   };
 
   const handleSaveCategories = async () => {
-    // This would save to the backend - for now we just show it's saved
+    if (!token) return;
     setSavingCategories(true);
-    // In a real implementation, call an API to save customCategories to user profile
-    setTimeout(() => setSavingCategories(false), 500);
+    try {
+      const response = await updateSellerApi(token, { customCategories });
+      if (response.success) {
+        setLastSavedCategories(customCategories);
+        toast.success('Product categories updated successfully');
+      } else {
+        toast.error(response.message || 'Failed to update categories');
+      }
+    } catch (error) {
+      console.error('Error saving categories:', error);
+      toast.error('Server error. Please try again.');
+    } finally {
+      setSavingCategories(false);
+    }
   };
 
   const getStockStatus = (product: Product) => {
@@ -255,11 +277,21 @@ export function InventoryPage() {
                 <Plus className="h-4 w-4 mr-1" />
                 Add
               </Button>
-              {customCategories.length > 0 && (
-                <Button onClick={handleSaveCategories} size="sm" disabled={savingCategories}>
-                  {savingCategories ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                  Save
-                </Button>
+              {isCategoriesDirty && (
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveCategories} size="sm" disabled={savingCategories}>
+                    {savingCategories ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                    Save Changes
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCustomCategories(lastSavedCategories)}
+                    disabled={savingCategories}
+                  >
+                    Discard
+                  </Button>
+                </div>
               )}
             </div>
           </CardContent>

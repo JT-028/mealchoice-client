@@ -32,7 +32,7 @@ export function BudgetSettings() {
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
-      
+
       try {
         const [budgetRes, spendingRes] = await Promise.all([
           getBudget(token),
@@ -97,19 +97,19 @@ export function BudgetSettings() {
 
   const todaySpent = spending?.todaySpent || 0;
   const weeklySpent = spending?.weeklySpent || 0;
-  
+
   const dailyRemaining = Math.max(0, formData.dailyLimit - todaySpent);
   const weeklyRemaining = Math.max(0, formData.weeklyLimit - weeklySpent);
   // Calculate percentage used for visual bar
   const dailyPercentUsed = formData.dailyLimit > 0 ? (todaySpent / formData.dailyLimit) * 100 : 0;
   const weeklyPercentUsed = formData.weeklyLimit > 0 ? (weeklySpent / formData.weeklyLimit) * 100 : 0;
-  
+
   // Alert logic: Trigger if remaining balance is less than or equal to threshold
   const isLowDaily = dailyRemaining <= formData.alertThreshold;
 
   return (
     <CustomerLayout>
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-6 w-full">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-foreground">Budget Settings</h1>
@@ -140,7 +140,7 @@ export function BudgetSettings() {
                   <div className="text-2xl font-bold">{formatCurrency(todaySpent)}</div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full rounded-full transition-all ${isLowDaily ? 'bg-destructive' : 'bg-primary'}`}
                         style={{ width: `${Math.min(dailyPercentUsed, 100)}%` }}
                       />
@@ -160,7 +160,7 @@ export function BudgetSettings() {
                   <div className="text-2xl font-bold">{formatCurrency(weeklySpent)}</div>
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full rounded-full transition-all ${weeklyRemaining <= formData.alertThreshold ? 'bg-destructive' : 'bg-primary'}`}
                         style={{ width: `${Math.min(weeklyPercentUsed, 100)}%` }}
                       />

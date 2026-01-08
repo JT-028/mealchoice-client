@@ -12,13 +12,24 @@ import {
   Info,
   Trash2,
   Flame,
-  List,
   Coffee,
   Sun,
   Moon,
   Candy,
   Sparkles,
-  Plus
+  Plus,
+  Beef,
+  Apple,
+  Droplets,
+  ChefHat,
+  Salad,
+  Cookie,
+  UtensilsCrossed,
+  Heart,
+  CheckCircle2,
+  ClipboardList,
+  Coins,
+  ChevronLeft
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,7 +58,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MEAL_CATEGORIES: { id: MealCategory; label: string; icon: typeof Sun }[] = [
@@ -87,6 +105,7 @@ export default function AIMealPlannerPage() {
   const [loading, setLoading] = useState(true);
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
   const [activeDay, setActiveDay] = useState(DAYS[new Date().getDay()]);
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(getWeekStart(new Date()));
 
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -135,10 +154,9 @@ export default function AIMealPlannerPage() {
 
   // Get meals for a specific day and category
   const getMealsForDayAndCategory = (dayName: string, category: MealCategory): SavedMeal[] => {
-    const weekStart = getWeekStart(new Date());
     const dayIndex = DAYS.indexOf(dayName);
-    const targetDate = new Date(weekStart);
-    targetDate.setDate(weekStart.getDate() + dayIndex);
+    const targetDate = new Date(selectedWeekStart);
+    targetDate.setDate(selectedWeekStart.getDate() + dayIndex);
 
     return savedMeals.filter(meal => {
       if (!meal.scheduledDate || !meal.mealType) return false;
@@ -152,16 +170,32 @@ export default function AIMealPlannerPage() {
 
   // Get all meals for a specific day (for calorie count)
   const getMealsForDay = (dayName: string): SavedMeal[] => {
-    const weekStart = getWeekStart(new Date());
     const dayIndex = DAYS.indexOf(dayName);
-    const targetDate = new Date(weekStart);
-    targetDate.setDate(weekStart.getDate() + dayIndex);
+    const targetDate = new Date(selectedWeekStart);
+    targetDate.setDate(selectedWeekStart.getDate() + dayIndex);
 
     return savedMeals.filter(meal => {
       if (!meal.scheduledDate) return false;
       const mealDate = new Date(meal.scheduledDate);
       return mealDate.toDateString() === targetDate.toDateString();
     });
+  };
+
+  const handlePrevWeek = () => {
+    const newDate = new Date(selectedWeekStart);
+    newDate.setDate(newDate.getDate() - 7);
+    setSelectedWeekStart(newDate);
+  };
+
+  const handleNextWeek = () => {
+    const newDate = new Date(selectedWeekStart);
+    newDate.setDate(newDate.getDate() + 7);
+    setSelectedWeekStart(newDate);
+  };
+
+  const handleToday = () => {
+    setSelectedWeekStart(getWeekStart(new Date()));
+    setActiveDay(DAYS[new Date().getDay()]);
   };
 
   const handleDeleteMeal = (meal: SavedMeal) => {
@@ -233,7 +267,7 @@ export default function AIMealPlannerPage() {
   return (
     <CustomerLayout noPadding>
       <div className="max-w-6xl mx-auto px-6 lg:px-12 py-8">
-        {/* Header */}
+        {/* Week Navigation & Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
@@ -241,9 +275,38 @@ export default function AIMealPlannerPage() {
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Weekly Schedule</span>
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Meal Planner</h1>
-            <p className="text-muted-foreground mt-2">Your scheduled meals from Generate Meals.</p>
+            <p className="text-muted-foreground mt-2">
+              Viewing week of {selectedWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} -
+              {new Date(new Date(selectedWeekStart).setDate(selectedWeekStart.getDate() + 6)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center bg-muted/50 rounded-xl p-1 border border-border mr-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevWeek}
+                className="h-9 w-9 rounded-lg"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToday}
+                className="px-3 h-9 text-xs font-bold"
+              >
+                Today
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNextWeek}
+                className="h-9 w-9 rounded-lg"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
             {savedMeals.length > 0 && (
               <Button
                 variant="outline"
@@ -251,7 +314,7 @@ export default function AIMealPlannerPage() {
                 onClick={() => setResetDialogOpen(true)}
               >
                 <Trash2 className="h-5 w-5" />
-                Reset Schedule
+                Reset
               </Button>
             )}
             <Button
@@ -259,16 +322,19 @@ export default function AIMealPlannerPage() {
               className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all font-bold gap-2"
             >
               <Sparkles className="h-5 w-5" />
-              Generate More Meals
+              Add Meals
             </Button>
           </div>
         </div>
 
         {/* Day Navigation */}
         <div ref={dayNavRef} className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none mb-6">
-          {DAYS.map((day) => {
+          {DAYS.map((day, index) => {
             const stats = getDayStats(day);
-            const isToday = day === DAYS[new Date().getDay()];
+            const date = new Date(selectedWeekStart);
+            date.setDate(selectedWeekStart.getDate() + index);
+            const isToday = date.toDateString() === new Date().toDateString();
+
             return (
               <Button
                 key={day}
@@ -276,10 +342,15 @@ export default function AIMealPlannerPage() {
                 onClick={() => setActiveDay(day)}
                 className={cn(
                   "min-w-[130px] rounded-xl font-bold flex flex-col h-auto py-3",
-                  activeDay === day && 'shadow-md shadow-primary/20'
+                  activeDay === day && 'shadow-md shadow-primary/20',
+                  isToday && activeDay !== day && 'border-primary/50 text-primary'
                 )}
               >
-                <span>{isToday ? 'Today' : day}</span>
+                <span className="text-xs opacity-70 mb-1">{day}</span>
+                <span className="text-lg">
+                  {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                </span>
+                {isToday && <Badge variant="secondary" className="mt-1 text-[8px] h-4 py-0">TODAY</Badge>}
                 {stats.mealCount > 0 && (
                   <span className="text-[10px] opacity-70 mt-1">
                     {stats.mealCount} meal{stats.mealCount !== 1 ? 's' : ''} • {stats.totalCalories} kcal
@@ -293,7 +364,9 @@ export default function AIMealPlannerPage() {
         {/* Per-Day Summary */}
         {dayStats.mealCount > 0 && (
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 flex items-center justify-between mb-8">
-            <span className="text-sm font-medium text-muted-foreground">{activeDay}'s Schedule</span>
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+              {activeDay}, {new Date(new Date(selectedWeekStart).setDate(selectedWeekStart.getDate() + DAYS.indexOf(activeDay))).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}'s Schedule
+            </span>
             <div className="flex items-center gap-4">
               <Badge variant="secondary" className="gap-1">
                 <Flame className="h-3 w-3 text-orange-500" />
@@ -380,8 +453,8 @@ export default function AIMealPlannerPage() {
                                 className="w-full gap-2"
                                 onClick={() => handleViewIngredients(meal)}
                               >
-                                <List className="h-4 w-4" />
-                                View Ingredients
+                                <Info className="h-4 w-4" />
+                                View Details
                               </Button>
                             </CardContent>
                           </div>
@@ -488,44 +561,212 @@ export default function AIMealPlannerPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Ingredients Modal */}
-
+      {/* Meal Details Modal with Tabs */}
       <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <List className="h-5 w-5 text-primary" />
-              {selectedMealForIngredients?.mealName}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedMealForIngredients?.mealType && (
-                <span className="capitalize">{selectedMealForIngredients.mealType}</span>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedMealForIngredients && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary capitalize">
+                    {selectedMealForIngredients.mealType}
+                  </Badge>
+                  {selectedMealForIngredients.estimatedCost && (
+                    <Badge variant="outline" className="text-green-600 border-green-600">
+                      <Coins className="h-3 w-3 mr-1" />
+                      {formatCurrency(selectedMealForIngredients.estimatedCost)}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    <Flame className="h-3 w-3 mr-1" />
+                    {selectedMealForIngredients.calories} kcal
+                  </Badge>
+                </div>
+                <DialogTitle className="text-2xl">{selectedMealForIngredients.mealName}</DialogTitle>
+                <DialogDescription className="text-base">
+                  {selectedMealForIngredients.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Health Benefits */}
+              {selectedMealForIngredients.healthBenefits && selectedMealForIngredients.healthBenefits.length > 0 && (
+                <div className="mt-4 p-4 rounded-lg bg-green-500/5 border border-green-500/20">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground mb-3">
+                    <Heart className="h-4 w-4 text-red-500" />
+                    Health Benefits
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMealForIngredients.healthBenefits.map((benefit, i) => (
+                      <Badge key={i} variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        {benefit}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
-              {' • '}{selectedMealForIngredients?.calories} kcal
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedMealForIngredients?.ingredients && selectedMealForIngredients.ingredients.length > 0 ? (
-              <ul className="space-y-2">
-                {selectedMealForIngredients.ingredients.map((ingredient, index) => (
-                  <li key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                    <span className="capitalize">{ingredient}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <List className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p>No ingredients available for this meal.</p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIngredientsDialogOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
+
+              {/* Tabbed Content */}
+              <Tabs defaultValue="ingredients" className="mt-6">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="ingredients" className="gap-2">
+                    <Salad className="h-4 w-4" />
+                    <span className="hidden sm:inline">Ingredients</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="instructions" className="gap-2">
+                    <ChefHat className="h-4 w-4" />
+                    <span className="hidden sm:inline">Instructions</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="nutrition" className="gap-2">
+                    <UtensilsCrossed className="h-4 w-4" />
+                    <span className="hidden sm:inline">Nutrition</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Ingredients Tab */}
+                <TabsContent value="ingredients" className="mt-4 space-y-4">
+                  {selectedMealForIngredients.ingredients && selectedMealForIngredients.ingredients.length > 0 ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {selectedMealForIngredients.ingredients.length} ingredients needed
+                        </span>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            // Add to checklist in localStorage
+                            const existingChecklistRaw = localStorage.getItem('meal_checklists');
+                            const existingChecklist = existingChecklistRaw ? JSON.parse(existingChecklistRaw) : {};
+
+                            existingChecklist[selectedMealForIngredients._id] = {
+                              mealId: selectedMealForIngredients._id,
+                              mealName: selectedMealForIngredients.mealName,
+                              mealType: selectedMealForIngredients.mealType,
+                              ingredients: selectedMealForIngredients.ingredients.map(ing => ({
+                                name: ing,
+                                checked: false
+                              })),
+                              addedAt: new Date().toISOString()
+                            };
+
+                            localStorage.setItem('meal_checklists', JSON.stringify(existingChecklist));
+                            toast.success(`${selectedMealForIngredients.mealName} added to your checklist!`);
+                            setIngredientsDialogOpen(false);
+                          }}
+                          className="gap-2"
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                          Generate Checklist
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {selectedMealForIngredients.ingredients.map((ingredient, i) => (
+                          <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors">
+                            <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                            <span className="text-sm text-foreground capitalize">{ingredient}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Salad className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground">No ingredients available</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Instructions Tab */}
+                <TabsContent value="instructions" className="mt-4 space-y-4">
+                  {selectedMealForIngredients.instructions && selectedMealForIngredients.instructions.length > 0 ? (
+                    <>
+                      <div className="text-sm text-muted-foreground mb-4">
+                        {selectedMealForIngredients.instructions.length} steps to prepare
+                      </div>
+                      <div className="space-y-3">
+                        {selectedMealForIngredients.instructions.map((step, i) => (
+                          <div key={i} className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                              {i + 1}
+                            </span>
+                            <div className="flex-1 pt-1">
+                              <p className="text-sm text-foreground leading-relaxed">{step}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <ChefHat className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground">No cooking instructions available</p>
+                      <p className="text-sm text-muted-foreground/70 mt-1">Instructions may not be available for this saved meal</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Nutrition Tab */}
+                <TabsContent value="nutrition" className="mt-4 space-y-6">
+                  {/* Macros Grid */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-3">Macronutrients</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                        <Flame className="h-6 w-6 text-orange-500 mb-2" />
+                        <span className="text-2xl font-bold text-foreground">{selectedMealForIngredients.calories}</span>
+                        <span className="text-xs text-muted-foreground">Calories</span>
+                      </div>
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <Beef className="h-6 w-6 text-red-500 mb-2" />
+                        <span className="text-2xl font-bold text-foreground">{selectedMealForIngredients.macros?.protein || 'N/A'}</span>
+                        <span className="text-xs text-muted-foreground">Protein</span>
+                      </div>
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <Apple className="h-6 w-6 text-amber-500 mb-2" />
+                        <span className="text-2xl font-bold text-foreground">{selectedMealForIngredients.macros?.carbs || 'N/A'}</span>
+                        <span className="text-xs text-muted-foreground">Carbs</span>
+                      </div>
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                        <Droplets className="h-6 w-6 text-yellow-500 mb-2" />
+                        <span className="text-2xl font-bold text-foreground">{selectedMealForIngredients.macros?.fats || 'N/A'}</span>
+                        <span className="text-xs text-muted-foreground">Fats</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Nutrition */}
+                  {selectedMealForIngredients.nutrition && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3">Additional Nutrition</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="flex flex-col items-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                          <Salad className="h-5 w-5 text-green-500 mb-2" />
+                          <span className="text-xl font-bold text-foreground">{selectedMealForIngredients.nutrition.fiber}</span>
+                          <span className="text-xs text-muted-foreground">Fiber</span>
+                        </div>
+                        <div className="flex flex-col items-center p-4 rounded-xl bg-pink-500/10 border border-pink-500/20">
+                          <Cookie className="h-5 w-5 text-pink-500 mb-2" />
+                          <span className="text-xl font-bold text-foreground">{selectedMealForIngredients.nutrition.sugar}</span>
+                          <span className="text-xs text-muted-foreground">Sugar</span>
+                        </div>
+                        <div className="flex flex-col items-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                          <Info className="h-5 w-5 text-blue-500 mb-2" />
+                          <span className="text-xl font-bold text-foreground">{selectedMealForIngredients.nutrition.sodium}</span>
+                          <span className="text-xs text-muted-foreground">Sodium</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              <DialogFooter className="mt-6">
+                <Button variant="outline" onClick={() => setIngredientsDialogOpen(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </CustomerLayout>

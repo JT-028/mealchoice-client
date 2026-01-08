@@ -55,11 +55,11 @@ export function CheckoutPage() {
   const [sellersInfo, setSellersInfo] = useState<Record<string, { paymentQR?: string; acceptsQR?: boolean; hasOwnDelivery?: boolean }>>({});
   const [receipts, setReceipts] = useState<Record<string, File>>({});
   const [paymentMethods, setPaymentMethods] = useState<Record<string, PaymentMethod>>({});
-  
+
   // Budget validation
   const [spending, setSpending] = useState<Spending | null>(null);
   const [showBudgetConfirm, setShowBudgetConfirm] = useState(false);
-  
+
   // Delivery options
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -105,7 +105,7 @@ export function CheckoutPage() {
         if (response.success && response.sellers) {
           const infoMap: Record<string, { paymentQR?: string; acceptsQR?: boolean; hasOwnDelivery?: boolean }> = {};
           response.sellers.forEach(s => {
-            infoMap[s._id] = { 
+            infoMap[s._id] = {
               paymentQR: s.paymentQR,
               acceptsQR: s.acceptsQR,
               hasOwnDelivery: s.hasOwnDelivery
@@ -139,7 +139,7 @@ export function CheckoutPage() {
   useEffect(() => {
     const fetchAddresses = async () => {
       if (!token || deliveryType !== 'delivery') return;
-      
+
       try {
         const response = await getSavedAddresses(token);
         if (response.success && response.addresses) {
@@ -214,7 +214,7 @@ export function CheckoutPage() {
 
   const handleSubmit = async () => {
     setShowBudgetConfirm(false);
-    
+
     if (!token) {
       setError('Please log in to place an order');
       return;
@@ -222,6 +222,16 @@ export function CheckoutPage() {
 
     setLoading(true);
     setError('');
+
+    // Mandatory receipt validation for QR payments
+    for (const [sellerId, method] of Object.entries(paymentMethods)) {
+      if (method === 'qr' && !receipts[sellerId]) {
+        const sellerName = itemsBySeller[sellerId]?.sellerName || 'the seller';
+        setError(`Please upload a payment receipt for ${sellerName}`);
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       const orderItems = items.map(item => ({
@@ -235,10 +245,10 @@ export function CheckoutPage() {
       formData.append('paymentMethods', JSON.stringify(paymentMethods));
       formData.append('deliveryType', deliveryType);
       if (notes) formData.append('notes', notes);
-      
+
       // Add delivery address if delivery type is delivery
       if (deliveryType === 'delivery') {
-        const addressToUse = selectedAddressId 
+        const addressToUse = selectedAddressId
           ? savedAddresses.find(a => a._id === selectedAddressId)
           : newAddress;
         if (addressToUse) {
@@ -426,21 +436,21 @@ export function CheckoutPage() {
                       </Label>
                     </div>
 
-                    {/* QR Payment Option - Only if enabled by seller */}
-                    {hasQR && (
-                      <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'qr' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'}`}>
-                        <RadioGroupItem value="qr" id={`qr-${sellerId}`} />
-                        <Label htmlFor={`qr-${sellerId}`} className="flex items-center gap-3 cursor-pointer flex-1">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <QrCode className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">QR Code Payment</p>
-                            <p className="text-xs text-muted-foreground">Scan and pay via GCash/Maya</p>
-                          </div>
-                        </Label>
-                      </div>
-                    )}
+                    {/* QR Payment Option */}
+                    <div className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-colors ${selectedMethod === 'qr' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/50'} ${!hasQR ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <RadioGroupItem value="qr" id={`qr-${sellerId}`} disabled={!hasQR} />
+                      <Label htmlFor={`qr-${sellerId}`} className={`flex items-center gap-3 cursor-pointer flex-1 ${!hasQR ? 'cursor-not-allowed' : ''}`}>
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <QrCode className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">QR Code Payment</p>
+                          <p className="text-xs text-muted-foreground">
+                            {hasQR ? 'Scan and pay via GCash/Maya' : 'Seller has not set up QR payment'}
+                          </p>
+                        </div>
+                      </Label>
+                    </div>
                   </RadioGroup>
 
                   {/* QR Code and Upload Section - only show if QR is selected */}
@@ -472,18 +482,23 @@ export function CheckoutPage() {
 
                       {/* Receipt Upload */}
                       <div>
-                        <Label htmlFor={`receipt-${sellerId}`} className="mb-2 block">Upload Payment Receipt</Label>
+                        <Label htmlFor={`receipt-${sellerId}`} className="mb-2 block">
+                          Upload Payment Receipt <span className="text-destructive">*</span>
+                        </Label>
                         <div className="flex items-center gap-2">
                           <Input
                             id={`receipt-${sellerId}`}
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleFileChange(sellerId, e)}
-                            className="cursor-pointer"
+                            className={`cursor-pointer ${selectedMethod === 'qr' && !receipts[sellerId] ? 'border-destructive' : ''}`}
+                            required
                           />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Upload a screenshot or photo of your payment confirmation.
+                          {selectedMethod === 'qr' && !receipts[sellerId]
+                            ? "A receipt is required for QR payments."
+                            : "Upload a screenshot or photo of your payment confirmation."}
                         </p>
                       </div>
                     </div>
@@ -509,7 +524,7 @@ export function CheckoutPage() {
                   </div>
                 </Label>
               </div>
-              
+
               {/* Only show delivery if all sellers support it */}
               {Object.keys(itemsBySeller).every(id => sellersInfo[id]?.hasOwnDelivery) ? (
                 <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
@@ -543,13 +558,13 @@ export function CheckoutPage() {
                   <MapPin className="h-4 w-4" />
                   Delivery Address
                 </div>
-                
+
                 {savedAddresses.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-sm">Saved Addresses</Label>
                     {savedAddresses.map((addr) => (
-                      <div 
-                        key={addr._id} 
+                      <div
+                        key={addr._id}
                         className={`p-3 border rounded-lg cursor-pointer ${selectedAddressId === addr._id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
                         onClick={() => { setSelectedAddressId(addr._id!); setShowNewAddressForm(false); }}
                       >
@@ -557,9 +572,9 @@ export function CheckoutPage() {
                         <p className="text-sm text-muted-foreground">{addr.fullAddress}</p>
                       </div>
                     ))}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="gap-1"
                       onClick={() => { setSelectedAddressId(null); setShowNewAddressForm(true); }}
                     >
@@ -687,7 +702,7 @@ export function CheckoutPage() {
             </Button>
 
             <p className="text-xs text-muted-foreground text-center mt-4">
-              {deliveryType === 'delivery' 
+              {deliveryType === 'delivery'
                 ? 'The seller will contact you to arrange delivery.'
                 : 'Please pick up your items at the specified market location.'}
             </p>
@@ -709,15 +724,15 @@ export function CheckoutPage() {
               </p>
               {spending && (
                 <ul className="list-disc pl-5 space-y-1">
-                  {exceedsDailyBudget && (
+                  {exceedsDailyBudget && spending && (
                     <li>
-                      Daily budget: {formatCurrency(spending.dailyRemaining)} remaining → 
+                      Daily budget: {formatCurrency(spending.dailyRemaining)} remaining →
                       <span className="text-destructive font-medium"> {formatCurrency(totalPrice - spending.dailyRemaining)} over</span>
                     </li>
                   )}
-                  {exceedsWeeklyBudget && (
+                  {exceedsWeeklyBudget && spending && (
                     <li>
-                      Weekly budget: {formatCurrency(spending.weeklyRemaining)} remaining → 
+                      Weekly budget: {formatCurrency(spending.weeklyRemaining)} remaining →
                       <span className="text-destructive font-medium"> {formatCurrency(totalPrice - spending.weeklyRemaining)} over</span>
                     </li>
                   )}
@@ -736,6 +751,6 @@ export function CheckoutPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </CustomerLayout>
+    </CustomerLayout >
   );
 }

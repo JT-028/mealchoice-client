@@ -38,9 +38,9 @@ interface SellerLayoutProps {
 
 const navItems = [
   { href: '/seller', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/seller/inventory', label: 'Inventories', icon: Warehouse },
   { href: '/seller/products', label: 'My Products', icon: Package },
   { href: '/seller/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/seller/inventory', label: 'Inventories', icon: Warehouse },
   { href: '/seller/messages', label: 'Messages', icon: MessageCircle },
   { href: '/seller/settings', label: 'Setting', icon: Settings },
   { href: '/seller/tutorial', label: 'Tutorial Video', icon: Video },
@@ -63,8 +63,8 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
       {/* Mobile Header */}
       <header className="lg:hidden sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="flex h-14 items-center justify-between px-4">
-          <button 
-            onClick={() => setSidebarOpen(true)} 
+          <button
+            onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-md hover:bg-accent transition-colors"
           >
             <Menu className="h-5 w-5 text-foreground" />
@@ -151,8 +151,8 @@ export function SellerLayout({ children, noPadding = false }: SellerLayoutProps)
                   <Icon className={`h-5 w-5 ${isActive ? '' : 'text-muted-foreground'}`} />
                   <span className="flex-1">{item.label}</span>
                   {showBadge && (
-                    <Badge 
-                      variant={isActive ? "secondary" : "default"} 
+                    <Badge
+                      variant={isActive ? "secondary" : "default"}
                       className="rounded-full h-5 min-w-5 flex items-center justify-center text-xs"
                     >
                       {totalUnreadCount > 99 ? '99+' : totalUnreadCount}

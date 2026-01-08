@@ -19,17 +19,19 @@ import {
   type ProductFormData,
   PRODUCT_CATEGORIES,
   PRODUCT_UNITS,
+  PRODUCT_TYPES,
 } from '@/api/products';
 import { Loader2, Upload, X, ImageIcon } from 'lucide-react';
 import { getImageUrl } from '@/config/api';
 
 interface ProductFormProps {
   product?: Product | null;
+  existingCategories?: string[];
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
+export function ProductForm({ product, existingCategories = [], onSuccess, onCancel }: ProductFormProps) {
   const { token } = useAuth();
   const isEditing = !!product;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +43,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     quantity: product?.quantity || 0,
     unit: product?.unit || 'piece',
     category: product?.category || 'others',
+    productType: product?.productType || 'perishable',
     isAvailable: product?.isAvailable ?? true,
     lowStockThreshold: product?.lowStockThreshold || 10,
   });
@@ -61,7 +64,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
         return;
       }
-      
+
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Image file size must be less than 5MB');
@@ -106,12 +109,21 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     try {
       let response;
       let productId: string;
-      
+
+      // Handle category logic
+      const submitData = { ...formData };
+
+      if (!submitData.category) {
+        setError('Please select a category');
+        setLoading(false);
+        return;
+      }
+
       if (isEditing && product) {
-        response = await updateProduct(token, product._id, formData);
+        response = await updateProduct(token, product._id, submitData);
         productId = product._id;
       } else {
-        response = await createProduct(token, formData);
+        response = await createProduct(token, submitData);
         productId = response.product?._id || '';
       }
 
@@ -168,7 +180,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
             )}
           </div>
-          
+
           {/* Upload Button */}
           <div className="flex-1">
             <input
@@ -248,8 +260,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         </div>
       </div>
 
-      {/* Unit and Category Row */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Unit, Category, and Product Type Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.5fr_1fr] gap-4">
         <div className="space-y-2">
           <Label>Unit *</Label>
           <Select
@@ -280,9 +292,53 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCT_CATEGORIES.map((cat) => (
+              {/* Standard categories except 'others' */}
+              {PRODUCT_CATEGORIES.filter(cat => cat.value !== 'others').map((cat) => (
                 <SelectItem key={cat.value} value={cat.value}>
                   {cat.label}
+                </SelectItem>
+              ))}
+
+              {/* Existing custom categories from other products and settings */}
+              {existingCategories
+                .filter(cat => cat && !PRODUCT_CATEGORIES.some(c => c.value === cat))
+                .map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    <span className="capitalize">{cat}</span>
+                  </SelectItem>
+                ))
+              }
+
+              {/* Current custom category if not in lists */}
+              {formData.category &&
+                !PRODUCT_CATEGORIES.some(c => c.value === formData.category) &&
+                !existingCategories.includes(formData.category) && (
+                  <SelectItem value={formData.category}>
+                    <span className="capitalize">{formData.category}</span>
+                  </SelectItem>
+                )}
+
+              {/* Always 'Others' at the very bottom */}
+              <SelectItem value="others" className="border-t mt-1">
+                Others
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Product Type *</Label>
+          <Select
+            value={formData.productType || 'perishable'}
+            onValueChange={(value) => setFormData({ ...formData, productType: value as 'perishable' | 'non-perishable' })}
+            disabled={loading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRODUCT_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
                 </SelectItem>
               ))}
             </SelectContent>

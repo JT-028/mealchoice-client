@@ -178,6 +178,53 @@ export async function bulkArchiveOrders(
   return response.json();
 }
 
+// Cancel order by customer
+export async function cancelOrderByCustomer(
+  token: string,
+  orderId: string,
+  reason: string
+): Promise<OrdersResponse> {
+  const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel-customer`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  });
+  return response.json();
+}
+
+// Hide order for buyer
+export async function hideOrderForBuyer(
+  token: string,
+  orderId: string
+): Promise<OrdersResponse> {
+  const response = await fetch(`${API_BASE_URL}/orders/${orderId}/hide-buyer`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  return response.json();
+}
+
+// Bulk hide orders for buyer
+export async function bulkHideOrdersForBuyer(
+  token: string,
+  orderIds: string[]
+): Promise<OrdersResponse & { count?: number }> {
+  const response = await fetch(`${API_BASE_URL}/orders/bulk-hide-buyer`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ orderIds }),
+  });
+  return response.json();
+}
+
 // Seller Analytics
 export interface SellerAnalytics {
   summary: {
@@ -211,6 +258,11 @@ export interface SellerAnalytics {
     date: string;
     orders: number;
     revenue: number;
+  }>;
+  marketComparison: Array<{
+    name: string;
+    revenue: number;
+    orders: number;
   }>;
 }
 

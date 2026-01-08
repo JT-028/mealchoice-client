@@ -7,7 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import {
   ShoppingBasket,
-  Sparkles,
   RefreshCw,
   Loader2,
   Check,
@@ -16,15 +15,14 @@ import {
   ShoppingCart,
   AlertCircle,
   Search,
-  Store
+  Store,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  UtensilsCrossed
 } from 'lucide-react';
-import {
-  getSavedMeals,
-  type SavedMeal
-} from '@/api/recommendations';
 import { getAllProducts, type Product } from '@/api/products';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
@@ -39,6 +37,7 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -46,147 +45,95 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-interface GroceryItem {
+interface ChecklistIngredient {
   name: string;
-  meals: string[];
-  count: number;
   checked: boolean;
 }
 
-// Get the start of the current week (Sunday)
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
+interface MealChecklist {
+  mealId: string;
+  mealName: string;
+  mealType: string;
+  ingredients: ChecklistIngredient[];
+  addedAt: string;
 }
-
-// Get the end of the current week (Saturday)
-function getWeekEnd(date: Date): Date {
-  const weekStart = getWeekStart(date);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-  return weekEnd;
-}
-
-// Aggregate ingredients from saved meals for the current week
-const aggregateGroceriesFromMeals = (meals: SavedMeal[]): GroceryItem[] => {
-  const groceryMap = new Map<string, { meals: Set<string>; count: number }>();
-
-  const weekStart = getWeekStart(new Date());
-  const weekEnd = getWeekEnd(new Date());
-
-  // Filter meals to only this week
-  const thisWeekMeals = meals.filter(meal => {
-    if (!meal.scheduledDate) return false;
-    const mealDate = new Date(meal.scheduledDate);
-    return mealDate >= weekStart && mealDate <= weekEnd;
-  });
-
-  thisWeekMeals.forEach(meal => {
-    if (!meal.ingredients || !Array.isArray(meal.ingredients)) return;
-
-    meal.ingredients.forEach(ingredient => {
-      const normalizedName = ingredient.toLowerCase().trim();
-      const existing = groceryMap.get(normalizedName);
-
-      if (existing) {
-        existing.meals.add(meal.mealName);
-        existing.count++;
-      } else {
-        groceryMap.set(normalizedName, {
-          meals: new Set([meal.mealName]),
-          count: 1
-        });
-      }
-    });
-  });
-
-  return Array.from(groceryMap.entries())
-    .map(([name, data]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      meals: Array.from(data.meals),
-      count: data.count,
-      checked: false
-    }))
-    .sort((a, b) => b.count - a.count);
-};
 
 export default function GroceriesPage() {
-  const { token } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([]);
-  const [groceries, setGroceries] = useState<GroceryItem[]>([]);
+  const [mealChecklists, setMealChecklists] = useState<Record<string, MealChecklist>>({});
+  const [expandedMeals, setExpandedMeals] = useState<Set<string>>(new Set());
 
   // Product search state
   const [searchingProduct, setSearchingProduct] = useState(false);
-  const [selectedIngredient, setSelectedIngredient] = useState<GroceryItem | null>(null);
+  const [selectedIngredient, setSelectedIngredient] = useState<{ name: string; mealId: string } | null>(null);
   const [matchingProducts, setMatchingProducts] = useState<Product[]>([]);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [notFoundDialogOpen, setNotFoundDialogOpen] = useState(false);
 
+  // Remove meal confirmation
+  const [removeMealDialogOpen, setRemoveMealDialogOpen] = useState(false);
+  const [mealToRemove, setMealToRemove] = useState<string | null>(null);
+
   const { addItem } = useCart();
 
-  const loadSavedMeals = useCallback(async () => {
-    if (!token) return;
+  const loadChecklists = useCallback(() => {
     setLoading(true);
     try {
-      const response = await getSavedMeals(token);
-      const meals = response.data || [];
-      setSavedMeals(meals);
-
-      // Load checked state from localStorage
-      const savedChecked = localStorage.getItem('groceries_checked');
-      const checkedMap = savedChecked ? JSON.parse(savedChecked) : {};
-
-      const aggregated = aggregateGroceriesFromMeals(meals);
-      const withCheckedState = aggregated.map(item => ({
-        ...item,
-        checked: checkedMap[item.name.toLowerCase()] || false
-      }));
-      setGroceries(withCheckedState);
+      const savedChecklists = localStorage.getItem('meal_checklists');
+      if (savedChecklists) {
+        const parsed = JSON.parse(savedChecklists);
+        setMealChecklists(parsed);
+        // Expand all meals by default
+        setExpandedMeals(new Set(Object.keys(parsed)));
+      }
     } catch (error) {
-      console.error('Error loading saved meals:', error);
+      console.error('Error loading checklists:', error);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (token) {
-      loadSavedMeals();
-    }
-  }, [token, loadSavedMeals]);
+    loadChecklists();
+  }, [loadChecklists]);
 
-  const handleCheckIngredient = async (item: GroceryItem, index: number) => {
-    // If already checked, just toggle off
-    if (item.checked) {
-      toggleItemChecked(index, false);
+  const saveChecklists = (checklists: Record<string, MealChecklist>) => {
+    localStorage.setItem('meal_checklists', JSON.stringify(checklists));
+    setMealChecklists(checklists);
+  };
+
+  const handleCheckIngredient = async (mealId: string, ingredientName: string, currentlyChecked: boolean) => {
+    // If toggling off, just update locally
+    if (currentlyChecked) {
+      const updated = { ...mealChecklists };
+      const meal = updated[mealId];
+      if (meal) {
+        const ingredient = meal.ingredients.find(i => i.name === ingredientName);
+        if (ingredient) {
+          ingredient.checked = false;
+          saveChecklists(updated);
+        }
+      }
       return;
     }
 
     // Search for matching products
-    setSelectedIngredient(item);
+    setSelectedIngredient({ name: ingredientName, mealId });
     setSearchingProduct(true);
 
     try {
-      const response = await getAllProducts({ search: item.name });
+      const response = await getAllProducts({ search: ingredientName });
 
       if (response.success && response.products && response.products.length > 0) {
-        // Filter to only available products
         const availableProducts = response.products.filter(p => p.isAvailable && p.quantity > 0);
 
         if (availableProducts.length > 0) {
           setMatchingProducts(availableProducts);
           setProductDialogOpen(true);
         } else {
-          // Products exist but none available
           setNotFoundDialogOpen(true);
         }
       } else {
-        // No products found at all
         setNotFoundDialogOpen(true);
       }
     } catch (error) {
@@ -197,20 +144,16 @@ export default function GroceriesPage() {
     }
   };
 
-  const toggleItemChecked = (index: number, checked: boolean) => {
-    setGroceries(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], checked };
-
-      // Save checked state to localStorage
-      const checkedMap: Record<string, boolean> = {};
-      updated.forEach(item => {
-        checkedMap[item.name.toLowerCase()] = item.checked;
-      });
-      localStorage.setItem('groceries_checked', JSON.stringify(checkedMap));
-
-      return updated;
-    });
+  const markIngredientChecked = (mealId: string, ingredientName: string) => {
+    const updated = { ...mealChecklists };
+    const meal = updated[mealId];
+    if (meal) {
+      const ingredient = meal.ingredients.find(i => i.name === ingredientName);
+      if (ingredient) {
+        ingredient.checked = true;
+        saveChecklists(updated);
+      }
+    }
   };
 
   const handleAddToCart = (product: Product) => {
@@ -218,9 +161,8 @@ export default function GroceriesPage() {
     toast.success(`${product.name} added to cart`);
 
     // Mark the ingredient as checked
-    const index = groceries.findIndex(g => g.name.toLowerCase() === selectedIngredient?.name.toLowerCase());
-    if (index !== -1) {
-      toggleItemChecked(index, true);
+    if (selectedIngredient) {
+      markIngredientChecked(selectedIngredient.mealId, selectedIngredient.name);
     }
 
     setProductDialogOpen(false);
@@ -233,23 +175,49 @@ export default function GroceriesPage() {
     setSelectedIngredient(null);
   };
 
-  const clearAllChecks = () => {
-    setGroceries(prev => prev.map(item => ({ ...item, checked: false })));
-    localStorage.removeItem('groceries_checked');
+  const confirmRemoveMeal = (mealId: string) => {
+    setMealToRemove(mealId);
+    setRemoveMealDialogOpen(true);
   };
 
-  // Count meals scheduled for this week
-  const weekStart = getWeekStart(new Date());
-  const weekEnd = getWeekEnd(new Date());
-  const thisWeekMealCount = savedMeals.filter(meal => {
-    if (!meal.scheduledDate) return false;
-    const mealDate = new Date(meal.scheduledDate);
-    return mealDate >= weekStart && mealDate <= weekEnd;
-  }).length;
+  const handleRemoveMeal = () => {
+    if (!mealToRemove) return;
 
-  const checkedCount = groceries.filter(g => g.checked).length;
-  const totalCount = groceries.length;
-  const progressPercent = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+    const updated = { ...mealChecklists };
+    const mealName = updated[mealToRemove]?.mealName;
+    delete updated[mealToRemove];
+    saveChecklists(updated);
+
+    toast.success(`${mealName} removed from checklist`);
+    setRemoveMealDialogOpen(false);
+    setMealToRemove(null);
+  };
+
+  const toggleMealExpanded = (mealId: string) => {
+    setExpandedMeals(prev => {
+      const next = new Set(prev);
+      if (next.has(mealId)) {
+        next.delete(mealId);
+      } else {
+        next.add(mealId);
+      }
+      return next;
+    });
+  };
+
+  const clearAllChecklists = () => {
+    localStorage.removeItem('meal_checklists');
+    setMealChecklists({});
+    toast.success('All checklists cleared');
+  };
+
+  // Calculate totals
+  const mealIds = Object.keys(mealChecklists);
+  const totalIngredients = mealIds.reduce((sum, id) => sum + mealChecklists[id].ingredients.length, 0);
+  const checkedIngredients = mealIds.reduce((sum, id) =>
+    sum + mealChecklists[id].ingredients.filter(i => i.checked).length, 0
+  );
+  const progressPercent = totalIngredients > 0 ? Math.round((checkedIngredients / totalIngredients) * 100) : 0;
 
   if (loading) {
     return (
@@ -268,44 +236,43 @@ export default function GroceriesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider">From Your Meal Plan</span>
+              <ShoppingBasket className="h-4 w-4 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Shopping Checklist</span>
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Grocery List</h1>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Check List</h1>
             <p className="text-muted-foreground mt-2">
-              {thisWeekMealCount > 0
-                ? `Ingredients from ${thisWeekMealCount} meal${thisWeekMealCount !== 1 ? 's' : ''} scheduled this week.`
-                : 'Click an ingredient to find it in our partner markets.'
+              {mealIds.length > 0
+                ? `${mealIds.length} meal${mealIds.length !== 1 ? 's' : ''} with ${totalIngredients} ingredients to shop for.`
+                : 'Generate checklists from your saved meals to start shopping.'
               }
             </p>
           </div>
           <div className="flex gap-2">
-            {groceries.length > 0 && (
+            {mealIds.length > 0 && (
               <Button
                 variant="outline"
-                onClick={clearAllChecks}
-                disabled={checkedCount === 0}
-                className="gap-2"
+                onClick={clearAllChecklists}
+                className="gap-2 text-destructive hover:bg-destructive/10"
               >
-                <RefreshCw className="h-4 w-4" />
-                Reset
+                <Trash2 className="h-4 w-4" />
+                Clear All
               </Button>
             )}
-            <Button onClick={loadSavedMeals} variant="outline" className="gap-2">
+            <Button onClick={loadChecklists} variant="outline" className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
           </div>
         </div>
 
-        {groceries.length > 0 ? (
+        {mealIds.length > 0 ? (
           <>
             {/* Progress Bar */}
             <Card className="mb-8 border-none shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-muted-foreground">Shopping Progress</span>
-                  <span className="text-sm font-bold">{checkedCount} / {totalCount} items</span>
+                  <span className="text-sm font-bold">{checkedIngredients} / {totalIngredients} items</span>
                 </div>
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div
@@ -322,58 +289,104 @@ export default function GroceriesPage() {
               </CardContent>
             </Card>
 
-            {/* Grocery List */}
-            <Card className="border-none shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingBasket className="h-5 w-5 text-primary" />
-                  Ingredients ({totalCount})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {groceries.map((item, index) => (
-                    <div
-                      key={item.name}
-                      className={cn(
-                        "flex items-center gap-4 px-6 py-4 transition-colors cursor-pointer hover:bg-muted/50",
-                        item.checked && "bg-green-50 dark:bg-green-950/20"
-                      )}
-                      onClick={() => handleCheckIngredient(item, index)}
+            {/* Meal Checklists */}
+            <div className="space-y-4">
+              {mealIds.map(mealId => {
+                const meal = mealChecklists[mealId];
+                const isExpanded = expandedMeals.has(mealId);
+                const mealCheckedCount = meal.ingredients.filter(i => i.checked).length;
+                const mealProgress = Math.round((mealCheckedCount / meal.ingredients.length) * 100);
+
+                return (
+                  <Card key={mealId} className="border-none shadow-lg overflow-hidden">
+                    <CardHeader
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => toggleMealExpanded(mealId)}
                     >
-                      <Checkbox
-                        checked={item.checked}
-                        onCheckedChange={() => handleCheckIngredient(item, index)}
-                        className="h-5 w-5"
-                        disabled={searchingProduct && selectedIngredient?.name === item.name}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          "font-medium transition-all flex items-center gap-2",
-                          item.checked && "line-through text-muted-foreground"
-                        )}>
-                          {item.name}
-                          {searchingProduct && selectedIngredient?.name === item.name && (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <UtensilsCrossed className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{meal.mealName}</CardTitle>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {meal.mealType} • {meal.ingredients.length} ingredients
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant={mealProgress === 100 ? "default" : "secondary"} className={mealProgress === 100 ? "bg-green-500" : ""}>
+                            {mealCheckedCount}/{meal.ingredients.length}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={(e) => { e.stopPropagation(); confirmRemoveMeal(mealId); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          {isExpanded ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
                           )}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          Used in: {item.meals.slice(0, 3).join(', ')}{item.meals.length > 3 ? ` +${item.meals.length - 3} more` : ''}
-                        </p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="shrink-0">
-                          ×{item.count}
-                        </Badge>
-                        {!item.checked && (
-                          <Search className="h-4 w-4 text-muted-foreground" />
-                        )}
+                      {/* Mini progress bar */}
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-3">
+                        <div
+                          className={cn(
+                            "h-full transition-all duration-300 rounded-full",
+                            mealProgress === 100 ? "bg-green-500" : "bg-primary"
+                          )}
+                          style={{ width: `${mealProgress}%` }}
+                        />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    </CardHeader>
+
+                    {isExpanded && (
+                      <CardContent className="pt-0">
+                        <div className="divide-y">
+                          {meal.ingredients.map((ingredient, index) => (
+                            <div
+                              key={index}
+                              className={cn(
+                                "flex items-center gap-4 py-3 transition-colors cursor-pointer hover:bg-muted/30 px-2 -mx-2 rounded-lg",
+                                ingredient.checked && "bg-green-50 dark:bg-green-950/20"
+                              )}
+                              onClick={() => handleCheckIngredient(mealId, ingredient.name, ingredient.checked)}
+                            >
+                              <Checkbox
+                                checked={ingredient.checked}
+                                onCheckedChange={() => handleCheckIngredient(mealId, ingredient.name, ingredient.checked)}
+                                className="h-5 w-5"
+                                disabled={searchingProduct && selectedIngredient?.name === ingredient.name}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className={cn(
+                                  "font-medium transition-all flex items-center gap-2 capitalize",
+                                  ingredient.checked && "line-through text-muted-foreground"
+                                )}>
+                                  {ingredient.name}
+                                  {searchingProduct && selectedIngredient?.name === ingredient.name && (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  )}
+                                </p>
+                              </div>
+                              {!ingredient.checked && (
+                                <Search className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
           </>
         ) : (
           /* Empty State */
@@ -381,9 +394,9 @@ export default function GroceriesPage() {
             <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
               <ShoppingBasket className="h-10 w-10 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground">No grocery list yet</h3>
+            <h3 className="text-2xl font-bold text-foreground">No checklists yet</h3>
             <p className="text-muted-foreground mt-2 mb-8 text-center max-w-sm">
-              Save meals to your weekly schedule from Generate Meals to see your grocery list here.
+              Go to your Meal Planner, click on a saved meal, and tap "Generate Checklist" to add ingredients here.
             </p>
             <Link to="/customer/meal-planner">
               <Button className="rounded-xl h-12 px-8 font-bold gap-2">
@@ -471,6 +484,24 @@ export default function GroceriesPage() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleNotFoundClose}>
               I Understand
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Remove Meal Confirmation Dialog */}
+      <AlertDialog open={removeMealDialogOpen} onOpenChange={setRemoveMealDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove from Checklist?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove "{mealToRemove && mealChecklists[mealToRemove]?.mealName}" from your shopping checklist?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemoveMeal} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

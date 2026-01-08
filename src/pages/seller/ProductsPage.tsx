@@ -38,6 +38,7 @@ import {
   bulkToggleAvailability,
   type Product,
 } from '@/api/products';
+import { getSettings } from '@/api/settings';
 import { ProductForm } from '@/components/seller/ProductForm';
 import {
   Plus,
@@ -71,6 +72,8 @@ export function ProductsPage() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+
   const fetchProducts = async () => {
     if (!token || !user?.isVerified) {
       setLoading(false);
@@ -89,8 +92,21 @@ export function ProductsPage() {
     }
   };
 
+  const fetchSettings = async () => {
+    if (!token) return;
+    try {
+      const response = await getSettings(token);
+      if (response.success && response.settings) {
+        setCustomCategories(response.settings.customCategories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchSettings();
   }, [token, user?.isVerified]);
 
   // Filter products based on search
@@ -103,6 +119,15 @@ export function ProductsPage() {
       p.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, products]);
+
+  // Extract unique categories from existing products AND settings to share with ProductForm
+  const allExistingCategories = useMemo(() => {
+    const categories = new Set([
+      ...products.map(p => p.category.toLowerCase()),
+      ...customCategories.map(c => c.toLowerCase())
+    ]);
+    return Array.from(categories).filter(Boolean);
+  }, [products, customCategories]);
 
 
 
@@ -460,6 +485,7 @@ export function ProductsPage() {
             </DialogHeader>
             <ProductForm
               product={editingProduct}
+              existingCategories={allExistingCategories}
               onSuccess={handleFormSuccess}
               onCancel={() => setFormOpen(false)}
             />

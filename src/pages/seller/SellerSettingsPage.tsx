@@ -36,7 +36,9 @@ import {
   Sun,
   Moon,
   Monitor,
-  Truck
+  Truck,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
@@ -56,7 +58,7 @@ export function SellerSettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Form states
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -78,10 +80,15 @@ export function SellerSettingsPage() {
   const [acceptsQR, setAcceptsQR] = useState(false);
   const [hasOwnDelivery, setHasOwnDelivery] = useState(false);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
-  
+
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [uploadingQR, setUploadingQR] = useState(false);
+
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -210,7 +217,7 @@ export function SellerSettingsPage() {
 
   const handleUpdateNotifications = async (type: 'orders' | 'stock' | 'qr' | 'delivery', value: boolean) => {
     if (!token) return;
-    
+
     if (type === 'orders') setNotifyNewOrders(value);
     else if (type === 'stock') setNotifyLowStock(value);
     else if (type === 'qr') setAcceptsQR(value);
@@ -291,11 +298,10 @@ export function SellerSettingsPage() {
         </div>
 
         {message.text && (
-          <div className={`p-3 rounded-lg text-sm ${
-            message.type === 'success' 
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+          <div className={`p-3 rounded-lg text-sm ${message.type === 'success'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
               : 'bg-destructive/10 text-destructive'
-          }`}>
+            }`}>
             {message.text}
           </div>
         )}
@@ -358,30 +364,66 @@ export function SellerSettingsPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <Button onClick={handleChangePassword} disabled={saving || !currentPassword || !newPassword}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
@@ -552,7 +594,7 @@ export function SellerSettingsPage() {
                       onChange={handleQRSelect}
                       className="hidden"
                     />
-                    
+
                     {qrPreview ? (
                       <div className="space-y-4">
                         <div className="w-48 h-48 mx-auto border rounded-lg overflow-hidden bg-white">

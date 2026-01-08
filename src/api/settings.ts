@@ -132,6 +132,7 @@ export async function updateSellerSettings(
     notifyLowStock?: boolean;
     acceptsQR?: boolean;
     hasOwnDelivery?: boolean;
+    customCategories?: string[];
   }
 ): Promise<SettingsResponse> {
   const response = await fetch(`${API_BASE_URL}/settings/seller`, {

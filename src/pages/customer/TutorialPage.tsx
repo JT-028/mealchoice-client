@@ -21,15 +21,19 @@ export function TutorialPage() {
               Watch this quick guide to get started with meal planning, ordering, and more.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center min-h-[400px] bg-muted/20 rounded-lg">
-            <div className="text-center p-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                <Video className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Video Coming Soon</h3>
-              <p className="text-muted-foreground max-w-sm">
-                We are currently producing a comprehensive tutorial video to help you get the most out of Meal Choice. Please check back later!
-              </p>
+          <CardContent className="flex flex-col items-center justify-center min-h-[400px] bg-muted/20 rounded-lg p-0 overflow-hidden">
+            <div className="w-full h-full aspect-video">
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://www.youtube-nocookie.com/embed/Az081QBjPag?rel=0&modestbranding=1" 
+                title="Customer Tutorial Video" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerPolicy="strict-origin-when-cross-origin"
+                loading="lazy"
+                allowFullScreen
+              ></iframe>
             </div>
           </CardContent>
         </Card>

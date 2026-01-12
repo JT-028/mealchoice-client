@@ -23,6 +23,10 @@ export interface AdminStats {
   totalOrders: number;
   totalProducts: number;
   totalRevenue: number;
+  activeSellers: number;
+  inactiveSellers: number;
+  activeCustomers: number;
+  inactiveCustomers: number;
   sellersByMarket: {
     sanNicolas: number;
     pampanga: number;
@@ -153,7 +157,7 @@ export async function rejectSeller(token: string, sellerId: string): Promise<Adm
 // Create new seller account
 export async function createSeller(
   token: string,
-  data: { name: string; email: string; marketLocation: string; stallName?: string; stallNumber?: string }
+  data: { name: string; email: string; phone: string; marketLocation: string; stallName?: string; stallNumber?: string }
 ): Promise<AdminResponse> {
   const response = await fetch(`${API_BASE_URL}/admin/sellers`, {
     method: 'POST',
@@ -192,6 +196,7 @@ export interface Admin {
   phone?: string | null;
   isMainAdmin: boolean;
   isActive: boolean;
+  isEmailVerified?: boolean;
   createdAt: string;
 }
 
@@ -214,7 +219,7 @@ export async function getAdmins(token: string): Promise<AdminsResponse> {
 // Create sub-admin
 export async function createAdmin(
   token: string,
-  data: { name: string; email: string; phone?: string; password: string }
+  data: { name: string; email: string; phone: string; password: string }
 ): Promise<AdminsResponse> {
   const response = await fetch(`${API_BASE_URL}/admin/admins`, {
     method: 'POST',
@@ -249,6 +254,24 @@ export async function updateAdmin(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
+  });
+  return response.json();
+}
+
+// Deactivate sub-admin
+export async function deactivateAdmin(token: string, adminId: string): Promise<AdminsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/admins/${adminId}/deactivate`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Activate sub-admin
+export async function activateAdmin(token: string, adminId: string): Promise<AdminsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/admins/${adminId}/activate`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
   });
   return response.json();
 }

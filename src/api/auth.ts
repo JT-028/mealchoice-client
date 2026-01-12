@@ -8,6 +8,7 @@ export interface User {
   marketLocation?: string;
   isVerified?: boolean;
   hasCompletedOnboarding?: boolean;
+  hasWatchedTutorial?: boolean;
   theme?: 'light' | 'dark' | 'system';
 }
 
@@ -61,6 +62,19 @@ export async function loginUser(data: LoginData): Promise<AuthResponse> {
 export async function getProfile(token: string): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/profile`, {
     method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  return response.json();
+}
+
+// Mark tutorial as watched
+export async function markTutorialWatched(token: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/tutorial-watched`, {
+    method: 'PUT',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',

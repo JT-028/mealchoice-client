@@ -374,6 +374,7 @@ export function ProductsPage() {
                   </TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Status</TableHead>
@@ -417,6 +418,17 @@ export function ProductsPage() {
                       <Badge variant="outline" className="capitalize">
                         {product.category}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {product.productType === 'perishable' ? (
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20">
+                          Perishable
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                          Non-Perishable
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       ₱{product.price.toFixed(2)}

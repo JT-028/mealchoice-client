@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { SellerLayout } from '@/components/layout/SellerLayout';
 import { PendingVerification } from '@/components/seller/PendingVerification';
+import { TutorialDialog } from '@/components/TutorialDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSellerProducts, type Product } from '@/api/products';
 import { getSellerAnalytics, type SellerAnalytics } from '@/api/orders';
@@ -18,7 +21,8 @@ import {
   LineChart,
   Line,
   BarChart,
-  Bar
+  Bar,
+  LabelList
 } from 'recharts';
 import {
   Package,
@@ -29,10 +33,10 @@ import {
   TrendingUp,
   TrendingDown,
   Printer,
-  DollarSign,
   Calendar,
   XCircle,
   Store,
+  Coins,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -58,6 +62,9 @@ export function SellerDashboard() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analytics, setAnalytics] = useState<SellerAnalytics | null>(null);
   const [period, setPeriod] = useState('month');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [useCustomDate, setUseCustomDate] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,7 +100,16 @@ export function SellerDashboard() {
 
       setAnalyticsLoading(true);
       try {
-        const response = await getSellerAnalytics(token, { period });
+        const params: { period?: string; startDate?: string; endDate?: string } = {};
+
+        if (useCustomDate && startDate && endDate) {
+          params.startDate = startDate;
+          params.endDate = endDate;
+        } else {
+          params.period = period;
+        }
+
+        const response = await getSellerAnalytics(token, params);
         if (response.success && response.analytics) {
           setAnalytics(response.analytics);
         }
@@ -105,7 +121,7 @@ export function SellerDashboard() {
     };
 
     fetchAnalytics();
-  }, [token, user?.isVerified, period]);
+  }, [token, user?.isVerified, period, startDate, endDate, useCustomDate]);
 
   const handlePrint = () => {
     const printContent = reportRef.current;
@@ -235,6 +251,9 @@ export function SellerDashboard() {
 
   return (
     <SellerLayout>
+      {/* Tutorial Dialog - shows on first login */}
+      <TutorialDialog userType="seller" />
+
       <div className="space-y-8" ref={reportRef}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -251,18 +270,72 @@ export function SellerDashboard() {
         </div>
 
         {/* Period Selector */}
-        <div className="flex flex-wrap gap-2">
-          {PERIOD_OPTIONS.map(opt => (
-            <Button
-              key={opt.value}
-              variant={period === opt.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod(opt.value)}
-            >
-              <Calendar className="h-3 w-3 mr-1" />
-              {opt.label}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-end gap-3">
+          {!useCustomDate && (
+            <>
+              {PERIOD_OPTIONS.map(opt => (
+                <Button
+                  key={opt.value}
+                  variant={period === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setPeriod(opt.value);
+                    setUseCustomDate(false);
+                  }}
+                >
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {opt.label}
+                </Button>
+              ))}
+            </>
+          )}
+
+          <div className="flex items-end gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">From</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  if (e.target.value && endDate) {
+                    setUseCustomDate(true);
+                    setPeriod('custom');
+                  }
+                }}
+                className="h-8 w-36"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">To</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  if (startDate && e.target.value) {
+                    setUseCustomDate(true);
+                    setPeriod('custom');
+                  }
+                }}
+                className="h-8 w-36"
+              />
+            </div>
+            {useCustomDate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setUseCustomDate(false);
+                  setStartDate('');
+                  setEndDate('');
+                  setPeriod('month');
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -277,7 +350,7 @@ export function SellerDashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-green-500" />
+                  <Coins className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
@@ -367,22 +440,36 @@ export function SellerDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Market Performance Comparison - San Nicolas vs Pampang */}
+              {/* Market Performance Comparison */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Store className="h-5 w-5 text-primary" />
-                    Market Performance comparison
+                    Market Performance
                   </CardTitle>
-                  <CardDescription>Top selling market establishments by revenue</CardDescription>
+                  <CardDescription>
+                    Revenue by seller - You: <span className="font-semibold text-primary">{user?.name}</span>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {analytics?.marketComparison && analytics.marketComparison.some(m => m.revenue > 0) ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={analytics.marketComparison}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(val) => `₱${val >= 1000 ? val / 1000 + 'k' : val}`} />
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart
+                        data={analytics.marketComparison.map(m => ({
+                          ...m,
+                          isCurrentSeller: m.name === user?.name
+                        }))}
+                        layout="vertical"
+                        margin={{ left: 80, right: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={true} vertical={false} />
+                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(val) => `₱${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`} />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          tick={{ fontSize: 11 }}
+                          width={75}
+                        />
                         <Tooltip
                           formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Revenue']}
                           contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
@@ -390,15 +477,26 @@ export function SellerDashboard() {
                         <Bar
                           dataKey="revenue"
                           name="Revenue"
-                          radius={[4, 4, 0, 0]}
-                          barSize={60}
+                          radius={[0, 4, 4, 0]}
+                          barSize={24}
                         >
-                          {analytics.marketComparison.map((_entry, index) => (
+                          {analytics.marketComparison.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
+                              fill={entry.name === user?.name ? '#22c55e' : COLORS[index % COLORS.length]}
+                              stroke={entry.name === user?.name ? '#16a34a' : 'none'}
+                              strokeWidth={entry.name === user?.name ? 2 : 0}
                             />
                           ))}
+                          <LabelList
+                            dataKey="revenue"
+                            position="right"
+                            formatter={(val) => {
+                              const num = Number(val) || 0;
+                              return `₱${num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num}`;
+                            }}
+                            style={{ fontSize: 10, fill: '#666' }}
+                          />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>

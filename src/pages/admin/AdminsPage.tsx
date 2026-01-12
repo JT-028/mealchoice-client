@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAdmins, createAdmin, updateAdmin, deleteAdmin, type Admin } from '@/api/admin';
+import { getAdmins, createAdmin, updateAdmin, deleteAdmin, deactivateAdmin, activateAdmin, type Admin } from '@/api/admin';
 import {
   UserPlus,
   Trash2,
@@ -42,7 +42,9 @@ import {
   Users,
   Eye,
   EyeOff,
-  Edit
+  Edit,
+  UserX,
+  UserCheck
 } from 'lucide-react';
 
 export function AdminsPage() {
@@ -73,9 +75,23 @@ export function AdminsPage() {
     confirmPassword: ''
   });
 
+  // Format phone number: auto-add +63 and format as +639XXXXXXXXX
+  const formatPhoneNumber = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.startsWith('63')) digits = digits.slice(2);
+    if (digits.startsWith('0')) digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    if (digits.length > 0) return `+63${digits}`;
+    return '';
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, phone: formatPhoneNumber(e.target.value) }));
+  };
+
   const fetchAdmins = async () => {
     if (!token) return;
-    
+
     try {
       const response = await getAdmins(token);
       if (response.success && response.admins) {
@@ -194,6 +210,20 @@ export function AdminsPage() {
     }
   };
 
+  const handleToggleActive = async (admin: Admin) => {
+    if (!token) return;
+    try {
+      if (admin.isActive) {
+        await deactivateAdmin(token, admin._id);
+      } else {
+        await activateAdmin(token, admin._id);
+      }
+      fetchAdmins();
+    } catch (error) {
+      console.error('Error toggling admin status:', error);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-PH', {
       year: 'numeric',
@@ -250,13 +280,16 @@ export function AdminsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
                     type="tel"
+                    placeholder="9171234567"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={handlePhoneChange}
+                    required
                   />
+                  <p className="text-xs text-muted-foreground">Enter 10-digit mobile number (e.g., 9171234567)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -355,6 +388,7 @@ export function AdminsPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -382,6 +416,18 @@ export function AdminsPage() {
                           <Badge variant="secondary">Sub-Admin</Badge>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {admin.isActive ? (
+                            <Badge className="bg-green-500 text-white w-fit">Active</Badge>
+                          ) : (
+                            <Badge variant="destructive" className="w-fit">Inactive</Badge>
+                          )}
+                          {!admin.isMainAdmin && admin.isEmailVerified === false && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-400 w-fit text-xs">Unverified</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{formatDate(admin.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         {admin.isMainAdmin ? (
@@ -390,6 +436,15 @@ export function AdminsPage() {
                           <span className="text-xs text-muted-foreground">Current User</span>
                         ) : (
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title={admin.isActive ? 'Deactivate' : 'Activate'}
+                              onClick={() => handleToggleActive(admin)}
+                              className={admin.isActive ? 'text-amber-600 hover:text-amber-700' : 'text-green-600 hover:text-green-700'}
+                            >
+                              {admin.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -424,7 +479,7 @@ export function AdminsPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Admin Account</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete the admin account for "{adminToDelete?.name}"? 
+                Are you sure you want to delete the admin account for "{adminToDelete?.name}"?
                 This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>

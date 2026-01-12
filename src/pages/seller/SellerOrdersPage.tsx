@@ -36,14 +36,13 @@ import { getImageUrl } from '@/config/api';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20', icon: <Clock className="h-4 w-4" /> },
-  confirmed: { label: 'Confirmed', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', icon: <CheckCircle className="h-4 w-4" /> },
   preparing: { label: 'Preparing', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', icon: <ChefHat className="h-4 w-4" /> },
-  ready: { label: 'Ready', color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20', icon: <Package className="h-4 w-4" /> },
-  completed: { label: 'Completed', color: 'bg-muted text-muted-foreground border-border', icon: <CheckCircle className="h-4 w-4" /> },
+  completed: { label: 'Completed', color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20', icon: <CheckCircle className="h-4 w-4" /> },
   cancelled: { label: 'Cancelled', color: 'bg-destructive/10 text-destructive border-destructive/20', icon: <XCircle className="h-4 w-4" /> },
 };
 
-const statusFlow = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
+// Simplified status flow: pending -> preparing -> completed
+const statusFlow = ['pending', 'preparing', 'completed'];
 
 type DateFilter = 'all' | 'today' | 'week' | 'month';
 
@@ -150,6 +149,10 @@ export function SellerOrdersPage() {
     try {
       const response = await updateOrderStatus(token, orderId, newStatus);
       if (response.success) {
+        // If marking as completed, auto-archive the order
+        if (newStatus === 'completed') {
+          await archiveOrder(token, orderId, true);
+        }
         fetchOrders();
       }
     } catch (error) {
@@ -252,8 +255,7 @@ export function SellerOrdersPage() {
     });
   };
 
-  const totalActive = (statusCounts.pending || 0) + (statusCounts.confirmed || 0) +
-    (statusCounts.preparing || 0) + (statusCounts.ready || 0);
+  const totalActive = (statusCounts.pending || 0) + (statusCounts.preparing || 0);
 
   // Block unverified sellers
   if (!user?.isVerified) {
@@ -392,16 +394,13 @@ export function SellerOrdersPage() {
         <Tabs value={selectedStatus} onValueChange={setSelectedStatus}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending" className="gap-1">
-              Pending {statusCounts.pending ? `(${statusCounts.pending})` : ''}
+            <TabsTrigger value="preparing" className="gap-1">
+              <ChefHat className="h-3 w-3" />
+              Preparing {statusCounts.preparing ? `(${statusCounts.preparing})` : ''}
             </TabsTrigger>
-            <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-            <TabsTrigger value="preparing">Preparing</TabsTrigger>
-            <TabsTrigger value="ready">Ready</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="archived" className="gap-1">
               <Archive className="h-3 w-3" />
-              Archived {statusCounts.archived ? `(${statusCounts.archived})` : ''}
+              Completed (Archived) {statusCounts.archived ? `(${statusCounts.archived})` : ''}
             </TabsTrigger>
           </TabsList>
 

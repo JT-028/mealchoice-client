@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +28,6 @@ import {
   FileSpreadsheet,
   Upload,
   Database,
-  Settings,
   Sun,
   Moon,
   Monitor,
@@ -35,7 +35,8 @@ import {
   User,
   Save,
   Lock,
-  KeyRound
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export function AdminSettingsPage() {
@@ -57,9 +58,16 @@ export function AdminSettingsPage() {
   });
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Password update state
+  // Password update state - 3 fields like customer/seller
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -127,26 +135,35 @@ export function AdminSettingsPage() {
 
   const handleUpdatePassword = async () => {
     if (!token) return;
-    
-    // Leave blank to keep existing - only update if password is provided
+
+    if (!currentPassword.trim()) {
+      showMessage('error', 'Please enter your current password');
+      return;
+    }
+
     if (!newPassword.trim()) {
       showMessage('error', 'Please enter a new password');
       return;
     }
-    
+
     if (newPassword.length < 6) {
       showMessage('error', 'Password must be at least 6 characters');
       return;
     }
-    
+
+    if (newPassword !== confirmPassword) {
+      showMessage('error', 'New passwords do not match');
+      return;
+    }
+
     setSavingPassword(true);
     try {
-      // For admin password update, we use a special endpoint that doesn't require current password
-      // This is handled by passing empty currentPassword - the server should allow this for admins
-      const response = await changePassword(token, { currentPassword: '', newPassword });
+      const response = await changePassword(token, { currentPassword, newPassword });
       if (response.success) {
         showMessage('success', 'Password updated successfully');
+        setCurrentPassword('');
         setNewPassword('');
+        setConfirmPassword('');
       } else {
         showMessage('error', response.message || 'Failed to update password');
       }
@@ -240,216 +257,298 @@ export function AdminSettingsPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Settings className="h-8 w-8" />
-            Admin Settings
-          </h1>
-          <p className="text-muted-foreground">System preferences and backup management</p>
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground">Manage your account and system preferences</p>
         </div>
 
         {message.text && (
-          <div className={`p-3 rounded-lg text-sm ${
-            message.type === 'success' 
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+          <div className={`p-3 rounded-lg text-sm ${message.type === 'success'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
               : 'bg-destructive/10 text-destructive'
-          }`}>
+            }`}>
             {message.text}
           </div>
         )}
 
-        {/* My Information Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              My Information
-            </CardTitle>
-            <CardDescription>Update your personal details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">Security</span>
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">Appearance</span>
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              <span className="hidden sm:inline">Backup</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  My Information
+                </CardTitle>
+                <CardDescription>Update your personal details</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        value={profileForm.firstName}
+                        onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
+                        placeholder="First Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        value={profileForm.lastName}
+                        onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
+                        placeholder="Last Name"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileForm.email}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">Email cannot be changed directly</p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={savingProfile}>
+                      {savingProfile ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Change Password
+                </CardTitle>
+                <CardDescription>Update your account password</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Current Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={profileForm.firstName}
-                    onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                    placeholder="First Name"
-                  />
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
+
+                {/* New Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={profileForm.lastName}
-                    onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                    placeholder="Last Name"
-                  />
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profileForm.email}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">Email cannot be changed directly</p>
-              </div>
-              <div className="flex justify-end">
-                <Button type="submit" disabled={savingProfile}>
-                  {savingProfile ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      SAVE INFORMATION
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
 
-        {/* Password Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Password
-            </CardTitle>
-            <CardDescription>Update your account password</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Leave blank to keep existing password"
-              />
-              <p className="text-xs text-muted-foreground">
-                Leave blank to keep your current password. Minimum 6 characters.
-              </p>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={handleUpdatePassword} disabled={savingPassword || !newPassword.trim()}>
-                {savingPassword ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <KeyRound className="h-4 w-4 mr-2" />
-                    Update Password
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                {/* Confirm Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
 
-        {/* Appearance Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Appearance
-            </CardTitle>
-            <CardDescription>Customize how the admin panel looks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <Button
-                variant={selectedTheme === 'light' ? 'default' : 'outline'}
-                className="flex flex-col h-auto py-4 gap-2"
-                onClick={() => handleThemeChange('light')}
-              >
-                <Sun className="h-6 w-6" />
-                <span>Light</span>
-              </Button>
-              <Button
-                variant={selectedTheme === 'dark' ? 'default' : 'outline'}
-                className="flex flex-col h-auto py-4 gap-2"
-                onClick={() => handleThemeChange('dark')}
-              >
-                <Moon className="h-6 w-6" />
-                <span>Dark</span>
-              </Button>
-              <Button
-                variant={selectedTheme === 'system' ? 'default' : 'outline'}
-                className="flex flex-col h-auto py-4 gap-2"
-                onClick={() => handleThemeChange('system')}
-              >
-                <Monitor className="h-6 w-6" />
-                <span>System</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleUpdatePassword}
+                    disabled={savingPassword || !currentPassword.trim() || !newPassword.trim()}
+                  >
+                    {savingPassword ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4 mr-2" />
+                        Update Password
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Backup Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Full Database Backup
-            </CardTitle>
-            <CardDescription>Export or restore the entire database (all users, products, orders, budgets, meals)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h4 className="text-sm font-medium mb-3">Export Full Backup</h4>
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={handleExportJSON} disabled={exportingJSON} variant="outline" size="lg">
-                  {exportingJSON ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileJson className="h-4 w-4 mr-2" />}
-                  Export JSON
-                </Button>
-                <Button onClick={handleExportCSV} disabled={exportingCSV} variant="outline" size="lg">
-                  {exportingCSV ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
-                  Export CSV
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                JSON includes all data (restorable). CSV is for viewing in spreadsheets.
-              </p>
-            </div>
+          {/* Appearance Tab */}
+          <TabsContent value="appearance">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Appearance
+                </CardTitle>
+                <CardDescription>Customize how the admin panel looks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <Button
+                    variant={selectedTheme === 'light' ? 'default' : 'outline'}
+                    className="flex flex-col h-auto py-4 gap-2"
+                    onClick={() => handleThemeChange('light')}
+                  >
+                    <Sun className="h-6 w-6" />
+                    <span>Light</span>
+                  </Button>
+                  <Button
+                    variant={selectedTheme === 'dark' ? 'default' : 'outline'}
+                    className="flex flex-col h-auto py-4 gap-2"
+                    onClick={() => handleThemeChange('dark')}
+                  >
+                    <Moon className="h-6 w-6" />
+                    <span>Dark</span>
+                  </Button>
+                  <Button
+                    variant={selectedTheme === 'system' ? 'default' : 'outline'}
+                    className="flex flex-col h-auto py-4 gap-2"
+                    onClick={() => handleThemeChange('system')}
+                  >
+                    <Monitor className="h-6 w-6" />
+                    <span>System</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <div className="border-t pt-6">
-              <h4 className="text-sm font-medium mb-3">Restore from Backup</h4>
-              <div className="flex gap-2">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleRestoreFileSelect}
-                  className="hidden"
-                  id="admin-restore-file"
-                />
-                <Button variant="outline" size="lg" asChild>
-                  <label htmlFor="admin-restore-file" className="cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Import JSON Backup
-                  </label>
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Restore admin settings and data from a previously exported JSON file
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Backup Tab */}
+          <TabsContent value="backup">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Full Database Backup
+                </CardTitle>
+                <CardDescription>Export or restore the entire database (all users, products, orders, budgets, meals)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Export Full Backup</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <Button onClick={handleExportJSON} disabled={exportingJSON} variant="outline" size="lg">
+                      {exportingJSON ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileJson className="h-4 w-4 mr-2" />}
+                      Export JSON
+                    </Button>
+                    <Button onClick={handleExportCSV} disabled={exportingCSV} variant="outline" size="lg">
+                      {exportingCSV ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                      Export CSV
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    JSON includes all data (restorable). CSV is for viewing in spreadsheets.
+                  </p>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="text-sm font-medium mb-3">Restore from Backup</h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleRestoreFileSelect}
+                      className="hidden"
+                      id="admin-restore-file"
+                    />
+                    <Button variant="outline" size="lg" asChild>
+                      <label htmlFor="admin-restore-file" className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import JSON Backup
+                      </label>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Restore admin settings and data from a previously exported JSON file
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Restore Backup Dialog */}
         <AlertDialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>

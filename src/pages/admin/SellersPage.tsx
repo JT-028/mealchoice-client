@@ -51,7 +51,8 @@ import {
   Plus,
   Power,
   PowerOff,
-  Store
+  Store,
+  AlertCircle
 } from 'lucide-react';
 
 export function SellersPage() {
@@ -83,11 +84,27 @@ export function SellersPage() {
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
+    phone: '',
     marketLocation: 'San Nicolas Market',
     stallName: '',
     stallNumber: ''
   });
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+
+  // Format phone number: auto-add +63 and format as +639XXXXXXXXX
+  const formatPhoneNumber = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.startsWith('63')) digits = digits.slice(2);
+    if (digits.startsWith('0')) digits = digits.slice(1);
+    digits = digits.slice(0, 10);
+    if (digits.length > 0) return `+63${digits}`;
+    return '';
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCreateForm({ ...createForm, phone: formatPhoneNumber(e.target.value) });
+  };
 
   // Deactivation state
   const [togglingStatus, setTogglingStatus] = useState<string | null>(null);
@@ -172,18 +189,30 @@ export function SellersPage() {
 
   const handleCreateSeller = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !createForm.name || !createForm.email || !createForm.marketLocation) return;
+    if (!token || !createForm.name || !createForm.email || !createForm.phone || !createForm.marketLocation) return;
+
+    // Validate phone format (+639XXXXXXXXX)
+    const phoneRegex = /^\+639\d{9}$/;
+    if (!phoneRegex.test(createForm.phone)) {
+      setCreateError('Please enter a valid Philippine mobile number (e.g., 9171234567)');
+      return;
+    }
 
     setCreating(true);
+    setCreateError('');
     try {
       const response = await createSeller(token, createForm);
       if (response.success) {
         setCreateDialog(false);
-        setCreateForm({ name: '', email: '', marketLocation: '', stallName: '', stallNumber: '' });
+        setCreateForm({ name: '', email: '', phone: '', marketLocation: 'San Nicolas Market', stallName: '', stallNumber: '' });
         fetchSellers();
+      } else {
+        // Handle specific error codes for duplicates
+        setCreateError(response.message || 'Failed to create seller');
       }
     } catch (error) {
       console.error('Error creating seller:', error);
+      setCreateError('Error creating seller account');
     } finally {
       setCreating(false);
     }
@@ -495,7 +524,7 @@ export function SellersPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Seller Account</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete the seller account for "{selectedSeller?.name}"? 
+                Are you sure you want to delete the seller account for "{selectedSeller?.name}"?
                 This will also delete all their products. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -529,8 +558,14 @@ export function SellersPage() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateSeller} className="space-y-4">
+              {createError && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>{createError}</span>
+                </div>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="create-name">Full Name</Label>
+                <Label htmlFor="create-name">Full Name *</Label>
                 <Input
                   id="create-name"
                   value={createForm.name}
@@ -539,7 +574,7 @@ export function SellersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="create-email">Email</Label>
+                <Label htmlFor="create-email">Email *</Label>
                 <Input
                   id="create-email"
                   type="email"
@@ -549,7 +584,19 @@ export function SellersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="create-market">Market Location</Label>
+                <Label htmlFor="create-phone">Phone Number *</Label>
+                <Input
+                  id="create-phone"
+                  type="tel"
+                  placeholder="9171234567"
+                  value={createForm.phone}
+                  onChange={handlePhoneChange}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Enter 10-digit mobile number (e.g., 9171234567)</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-market">Market Location *</Label>
                 <Select
                   value={createForm.marketLocation}
                   onValueChange={(value) => setCreateForm({ ...createForm, marketLocation: value })}
@@ -583,10 +630,10 @@ export function SellersPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setCreateDialog(false)}>
+                <Button type="button" variant="outline" onClick={() => { setCreateDialog(false); setCreateError(''); }}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={creating || !createForm.name || !createForm.email || !createForm.marketLocation}>
+                <Button type="submit" disabled={creating || !createForm.name || !createForm.email || !createForm.phone || !createForm.marketLocation}>
                   {creating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

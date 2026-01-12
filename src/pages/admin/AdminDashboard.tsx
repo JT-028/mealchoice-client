@@ -19,7 +19,7 @@ export function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       if (!token) return;
-      
+
       try {
         const response = await getAdminStats(token);
         if (response.success && response.stats) {
@@ -104,6 +104,59 @@ export function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Account Status Grid */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Seller Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Seller Account Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-sm">Active Sellers</span>
+                      </div>
+                      <span className="font-semibold text-green-600">{stats.activeSellers}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-red-500" />
+                        <span className="text-sm">Inactive Sellers</span>
+                      </div>
+                      <span className="font-semibold text-red-600">{stats.inactiveSellers}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Customer Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Customer Account Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-sm">Active Customers</span>
+                      </div>
+                      <span className="font-semibold text-green-600">{stats.activeCustomers}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-red-500" />
+                        <span className="text-sm">Inactive Customers</span>
+                      </div>
+                      <span className="font-semibold text-red-600">{stats.inactiveCustomers}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         ) : (
           <p className="text-muted-foreground">Unable to load stats</p>

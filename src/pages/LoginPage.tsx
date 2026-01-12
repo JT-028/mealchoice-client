@@ -11,7 +11,7 @@ import { UtensilsCrossed, Loader2, Eye, EyeOff } from 'lucide-react';
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,10 +43,12 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center lg:justify-end p-4 lg:pr-32">
       {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-20"
+      <div
+        className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: 'url("/login-bg.webp")' }}
       />
+      {/* Dark overlay - stronger in light mode for better contrast */}
+      <div className="absolute inset-0 bg-black/60 dark:bg-black/60" />
 
       <Card className="relative w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
@@ -60,7 +62,7 @@ export function LoginPage() {
             Sign in to your Meal Choice account
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -74,7 +76,7 @@ export function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="E-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -88,7 +90,7 @@ export function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

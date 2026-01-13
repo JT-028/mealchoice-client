@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CustomerLayout } from '@/components/layout/CustomerLayout';
+import { TutorialDialog } from '@/components/TutorialDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { getBudget, getSpending, type Budget, type Spending } from '@/api/budget';
 import { getSavedMeals } from '@/api/recommendations';
@@ -29,7 +30,7 @@ export function CustomerDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!token) return;
-      
+
       try {
         const [budgetRes, spendingRes, mealsRes] = await Promise.all([
           getBudget(token),
@@ -60,12 +61,15 @@ export function CustomerDashboard() {
   const weeklyRemaining = spending ? spending.weeklyRemaining : (budget ? budget.weeklyLimit : 0);
   const dailyPercentUsed = budget && spending ? (spending.todaySpent / budget.dailyLimit) * 100 : 0;
   const weeklyPercentUsed = budget && spending ? (spending.weeklySpent / budget.weeklyLimit) * 100 : 0;
-  
+
   const todaySpent = spending?.todaySpent || 0;
   const weeklySpent = spending?.weeklySpent || 0;
 
   return (
     <CustomerLayout>
+      {/* Tutorial Dialog - shows after onboarding is completed */}
+      <TutorialDialog userType="customer" />
+
       <div className="space-y-8">
         {/* Header */}
         <div>
@@ -92,7 +96,7 @@ export function CustomerDashboard() {
                   <div className="text-2xl font-bold">{formatCurrency(dailyRemaining)}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full rounded-full ${dailyPercentUsed > 80 ? 'bg-destructive' : 'bg-primary'}`}
                         style={{ width: `${Math.min(dailyPercentUsed, 100)}%` }}
                       />
@@ -114,7 +118,7 @@ export function CustomerDashboard() {
                   <div className="text-2xl font-bold">{formatCurrency(weeklyRemaining)}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full rounded-full ${weeklyPercentUsed > 80 ? 'bg-destructive' : 'bg-primary'}`}
                         style={{ width: `${Math.min(weeklyPercentUsed, 100)}%` }}
                       />
@@ -152,7 +156,7 @@ export function CustomerDashboard() {
               </Card>
             </div>
 
-              {/* Quick Actions */}
+            {/* Quick Actions */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -181,7 +185,7 @@ export function CustomerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <Button variant="ghost" asChild className="p-0 h-auto">
-                    <Link to="/customer/ai-meal-planner">
+                    <Link to="/customer/meal-planner">
                       Plan Now <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -198,8 +202,8 @@ export function CustomerDashboard() {
                 </CardHeader>
                 <CardContent>
                   <Button variant="default" asChild className="p-0 h-auto bg-transparent hover:bg-transparent text-primary hover:underline">
-                    <Link to="/customer/ai-recommendations" className="inline-flex items-center">
-                      Get Recommendations <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link to="/customer/generate-meals" className="inline-flex items-center">
+                      Generate Meal <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardContent>

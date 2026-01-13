@@ -44,7 +44,9 @@ import {
   EyeOff,
   Edit,
   UserX,
-  UserCheck
+  UserCheck,
+  Check,
+  X
 } from 'lucide-react';
 
 export function AdminsPage() {
@@ -389,6 +391,7 @@ export function AdminsPage() {
                     <TableHead>Phone</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Verified</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -417,16 +420,18 @@ export function AdminsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {admin.isActive ? (
-                            <Badge className="bg-green-500 text-white w-fit">Active</Badge>
-                          ) : (
-                            <Badge variant="destructive" className="w-fit">Inactive</Badge>
-                          )}
-                          {!admin.isMainAdmin && admin.isEmailVerified === false && (
-                            <Badge variant="outline" className="text-amber-600 border-amber-400 w-fit text-xs">Unverified</Badge>
-                          )}
-                        </div>
+                        {admin.isActive ? (
+                          <Badge className="bg-green-500 text-white w-fit">Active</Badge>
+                        ) : (
+                          <Badge variant="destructive" className="w-fit">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {admin.isMainAdmin || admin.isEmailVerified ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
                       </TableCell>
                       <TableCell>{formatDate(admin.createdAt)}</TableCell>
                       <TableCell className="text-right">

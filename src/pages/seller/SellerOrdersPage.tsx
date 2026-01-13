@@ -623,16 +623,35 @@ export function SellerOrdersPage() {
                         {/* Actions */}
                         <div className="flex flex-wrap gap-2 pt-2 mt-2 border-t">
                           {nextStatus && order.status !== 'cancelled' && !order.isArchived && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleStatusUpdate(order._id, nextStatus)}
-                              disabled={isUpdating}
-                            >
-                              {isUpdating ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                              ) : null}
-                              Mark as {statusConfig[nextStatus]?.label}
-                            </Button>
+                            <>
+                              {/* If next status is completed and payment not verified, show disabled with message */}
+                              {nextStatus === 'completed' && !order.isPaymentVerified ? (
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    disabled
+                                    className="opacity-50"
+                                    title="Payment must be verified first"
+                                  >
+                                    Mark as {statusConfig[nextStatus]?.label}
+                                  </Button>
+                                  <span className="text-xs text-amber-600 dark:text-amber-400">
+                                    (Verify payment first)
+                                  </span>
+                                </div>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleStatusUpdate(order._id, nextStatus)}
+                                  disabled={isUpdating}
+                                >
+                                  {isUpdating ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                  ) : null}
+                                  Mark as {statusConfig[nextStatus]?.label}
+                                </Button>
+                              )}
+                            </>
                           )}
 
                           {order.status === 'pending' && !order.isArchived && (

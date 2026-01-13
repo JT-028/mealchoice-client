@@ -196,6 +196,7 @@ export interface Admin {
   phone?: string | null;
   isMainAdmin: boolean;
   isActive: boolean;
+  isVerified?: boolean;
   isEmailVerified?: boolean;
   createdAt: string;
 }

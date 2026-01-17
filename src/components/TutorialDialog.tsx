@@ -121,8 +121,14 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
         }
     };
 
-    const handleSkip = async () => {
-        await handleClose();
+    const handleSkip = () => {
+        // Just close the dialog without marking as watched
+        // The dialog will appear again on next login
+        if (playerRef.current) {
+            playerRef.current.destroy();
+            playerRef.current = null;
+        }
+        setOpen(false);
     };
 
     const title = userType === 'seller'
@@ -173,7 +179,7 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
                             disabled={loading}
                         >
                             <X className="h-4 w-4 mr-1" />
-                            {loading ? 'Saving...' : 'Skip for Now'}
+                            Watch Later
                         </Button>
                         <Button
                             onClick={handleClose}

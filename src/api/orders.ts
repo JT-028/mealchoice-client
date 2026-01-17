@@ -264,6 +264,16 @@ export interface SellerAnalytics {
     revenue: number;
     orders: number;
   }>;
+  sellerIncomeOverTime?: Array<{
+    sellerId: string;
+    sellerName: string;
+    marketLocation: string;
+    totalRevenue: number;
+    timeSeries: Array<{
+      date: string;
+      revenue: number;
+    }>;
+  }>;
 }
 
 export interface AnalyticsResponse {

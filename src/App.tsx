@@ -40,6 +40,8 @@ import { AdminsPage } from './pages/admin/AdminsPage';
 import { CustomersPage } from './pages/admin/CustomersPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 // Component to redirect users to their role-specific dashboard
 function DashboardRedirect() {
@@ -79,6 +81,8 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
                 {/* Dashboard Redirect */}
                 <Route

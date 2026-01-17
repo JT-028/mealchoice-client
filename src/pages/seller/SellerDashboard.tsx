@@ -17,12 +17,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   LineChart,
-  Line,
-  BarChart,
-  Bar,
-  LabelList
+  Line
 } from 'recharts';
 import {
   Package,
@@ -237,6 +233,8 @@ export function SellerDashboard() {
   if (!user?.isVerified) {
     return (
       <SellerLayout>
+        {/* Tutorial Dialog - shows on first login, even before verification */}
+        <TutorialDialog userType="seller" />
         <PendingVerification />
       </SellerLayout>
     );
@@ -440,69 +438,131 @@ export function SellerDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Market Performance Comparison */}
+              {/* Market Performance Comparison - Seller Income Over Time */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Store className="h-5 w-5 text-primary" />
-                    Market Performance
+                    Seller Income Over Time
                   </CardTitle>
                   <CardDescription>
-                    Revenue by seller - You: <span className="font-semibold text-primary">{user?.name}</span>
+                    Compare seller performance across public markets (last 14 days)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {analytics?.marketComparison && analytics.marketComparison.some(m => m.revenue > 0) ? (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart
-                        data={analytics.marketComparison.map(m => ({
-                          ...m,
-                          isCurrentSeller: m.name === user?.name
-                        }))}
-                        layout="vertical"
-                        margin={{ left: 80, right: 20 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={true} vertical={false} />
-                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(val) => `₱${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`} />
-                        <YAxis
-                          type="category"
-                          dataKey="name"
-                          tick={{ fontSize: 11 }}
-                          width={75}
-                        />
-                        <Tooltip
-                          formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Revenue']}
-                          contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                        />
-                        <Bar
-                          dataKey="revenue"
-                          name="Revenue"
-                          radius={[0, 4, 4, 0]}
-                          barSize={24}
+                  {analytics?.sellerIncomeOverTime && analytics.sellerIncomeOverTime.length > 0 ? (
+                    <>
+                      {/* Legend */}
+                      <div className="flex flex-wrap gap-3 mb-4 text-xs">
+                        {analytics.sellerIncomeOverTime.map((seller, index) => {
+                          // Different colors for different markets
+                          const isSanNicolas = seller.marketLocation?.includes('San Nicolas');
+                          const isPampang = seller.marketLocation?.includes('Pampang');
+                          const isCurrentSeller = seller.sellerName === user?.name;
+
+                          // Color scheme: warm tones for one market, cool tones for another
+                          const marketColors = {
+                            sanNicolas: ['#f97316', '#fb923c', '#fdba74', '#fed7aa'], // orange tones
+                            pampang: ['#ef4444', '#f87171', '#fca5a5', '#fecaca'], // red tones
+                            default: COLORS
+                          };
+
+                          let color;
+                          if (isCurrentSeller) {
+                            color = '#22c55e'; // Green for current seller
+                          } else if (isSanNicolas) {
+                            color = marketColors.sanNicolas[index % marketColors.sanNicolas.length];
+                          } else if (isPampang) {
+                            color = marketColors.pampang[index % marketColors.pampang.length];
+                          } else {
+                            color = COLORS[index % COLORS.length];
+                          }
+
+                          return (
+                            <div key={seller.sellerId} className="flex items-center gap-1.5">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className={`${isCurrentSeller ? 'font-semibold text-primary' : ''}`}>
+                                {seller.sellerName}
+                                {isCurrentSeller && ' (You)'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <ResponsiveContainer width="100%" height={280}>
+                        <LineChart
+                          data={(() => {
+                            // Transform data for line chart - create array of dates with each seller's revenue
+                            const sellers = analytics.sellerIncomeOverTime || [];
+                            if (sellers.length === 0) return [];
+
+                            // Use first seller's timeSeries as base for dates
+                            return sellers[0].timeSeries.map((point, dateIndex) => {
+                              const dataPoint: Record<string, any> = {
+                                date: new Date(point.date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+                              };
+
+                              // Add each seller's revenue for this date
+                              sellers.forEach(seller => {
+                                dataPoint[seller.sellerName] = seller.timeSeries[dateIndex]?.revenue || 0;
+                              });
+
+                              return dataPoint;
+                            });
+                          })()}
+                          margin={{ left: 10, right: 10 }}
                         >
-                          {analytics.marketComparison.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.name === user?.name ? '#22c55e' : COLORS[index % COLORS.length]}
-                              stroke={entry.name === user?.name ? '#16a34a' : 'none'}
-                              strokeWidth={entry.name === user?.name ? 2 : 0}
-                            />
-                          ))}
-                          <LabelList
-                            dataKey="revenue"
-                            position="right"
-                            formatter={(val) => {
-                              const num = Number(val) || 0;
-                              return `₱${num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num}`;
-                            }}
-                            style={{ fontSize: 10, fill: '#666' }}
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                          <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`} />
+                          <Tooltip
+                            formatter={(value) => [formatCurrency(Number(value) || 0), '']}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: 12 }}
                           />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+                          {analytics.sellerIncomeOverTime?.map((seller, index) => {
+                            const isSanNicolas = seller.marketLocation?.includes('San Nicolas');
+                            const isPampang = seller.marketLocation?.includes('Pampang');
+                            const isCurrentSeller = seller.sellerName === user?.name;
+
+                            const marketColors = {
+                              sanNicolas: ['#f97316', '#fb923c', '#fdba74', '#fed7aa'],
+                              pampang: ['#ef4444', '#f87171', '#fca5a5', '#fecaca'],
+                              default: COLORS
+                            };
+
+                            let color;
+                            if (isCurrentSeller) {
+                              color = '#22c55e';
+                            } else if (isSanNicolas) {
+                              color = marketColors.sanNicolas[index % marketColors.sanNicolas.length];
+                            } else if (isPampang) {
+                              color = marketColors.pampang[index % marketColors.pampang.length];
+                            } else {
+                              color = COLORS[index % COLORS.length];
+                            }
+
+                            return (
+                              <Line
+                                key={seller.sellerId}
+                                type="monotone"
+                                dataKey={seller.sellerName}
+                                stroke={color}
+                                strokeWidth={isCurrentSeller ? 3 : 2}
+                                dot={{ fill: color, strokeWidth: isCurrentSeller ? 2 : 1, r: isCurrentSeller ? 4 : 3 }}
+                                activeDot={{ r: 6 }}
+                              />
+                            );
+                          })}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </>
                   ) : (
                     <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-                      No market comparison data available for this period
+                      No seller comparison data available for this period
                     </div>
                   )}
                 </CardContent>

@@ -317,90 +317,179 @@ export function InventoryPage() {
               </div>
             </div>
 
-            {/* Products Table */}
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left p-3 font-medium">Product</th>
-                    <th className="text-left p-3 font-medium">Category</th>
-                    <th className="text-center p-3 font-medium">Stock</th>
-                    <th className="text-center p-3 font-medium">Low Threshold</th>
-                    <th className="text-center p-3 font-medium">Status</th>
-                    <th className="text-center p-3 font-medium">Available</th>
-                    <th className="text-center p-3 font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProducts.map((product) => {
-                    const status = getStockStatus(product);
-                    const StatusIcon = status.icon;
-                    const edited = editedProducts[product._id];
-                    const hasChanges = edited && (
-                      edited.quantity !== undefined ||
-                      edited.lowStockThreshold !== undefined ||
-                      edited.isAvailable !== undefined
-                    );
+            {/* Products Table - Desktop */}
+            <div className="hidden sm:block border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-3 font-medium">Product</th>
+                      <th className="text-left p-3 font-medium">Category</th>
+                      <th className="text-center p-3 font-medium">Stock</th>
+                      <th className="text-center p-3 font-medium">Low Threshold</th>
+                      <th className="text-center p-3 font-medium">Status</th>
+                      <th className="text-center p-3 font-medium">Available</th>
+                      <th className="text-center p-3 font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map((product) => {
+                      const status = getStockStatus(product);
+                      const StatusIcon = status.icon;
+                      const edited = editedProducts[product._id];
+                      const hasChanges = edited && (
+                        edited.quantity !== undefined ||
+                        edited.lowStockThreshold !== undefined ||
+                        edited.isAvailable !== undefined
+                      );
 
-                    return (
-                      <tr key={product._id} className="border-t">
-                        <td className="p-3">
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">₱{product.price}/{product.unit}</div>
-                        </td>
-                        <td className="p-3">
-                          <Badge variant="outline" className="capitalize">{product.category}</Badge>
-                        </td>
-                        <td className="p-3 text-center">
-                          <Input
-                            type="number"
-                            min="0"
-                            value={edited?.quantity ?? product.quantity}
-                            onChange={(e) => handleFieldChange(product._id, 'quantity', parseInt(e.target.value) || 0)}
-                            className="w-20 mx-auto text-center"
-                          />
-                        </td>
-                        <td className="p-3 text-center">
-                          <Input
-                            type="number"
-                            min="0"
-                            value={edited?.lowStockThreshold ?? product.lowStockThreshold}
-                            onChange={(e) => handleFieldChange(product._id, 'lowStockThreshold', parseInt(e.target.value) || 0)}
-                            className="w-20 mx-auto text-center"
-                          />
-                        </td>
-                        <td className="p-3 text-center">
-                          <Badge variant={status.variant} className={`gap-1 ${(status as any).className || ''}`}>
-                            <StatusIcon className="h-3 w-3" />
-                            {status.label}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-center">
-                          <Switch
-                            checked={edited?.isAvailable ?? product.isAvailable}
-                            onCheckedChange={(checked) => handleFieldChange(product._id, 'isAvailable', checked)}
-                          />
-                        </td>
-                        <td className="p-3 text-center">
-                          <Button
-                            size="sm"
-                            disabled={!hasChanges || saving === product._id}
-                            onClick={() => handleSaveProduct(product)}
-                          >
-                            {saving === product._id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Save className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <tr key={product._id} className="border-t">
+                          <td className="p-3">
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-muted-foreground">₱{product.price}/{product.unit}</div>
+                          </td>
+                          <td className="p-3">
+                            <Badge variant="outline" className="capitalize">{product.category}</Badge>
+                          </td>
+                          <td className="p-3 text-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={edited?.quantity ?? product.quantity}
+                              onChange={(e) => handleFieldChange(product._id, 'quantity', parseInt(e.target.value) || 0)}
+                              className="w-20 mx-auto text-center"
+                            />
+                          </td>
+                          <td className="p-3 text-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={edited?.lowStockThreshold ?? product.lowStockThreshold}
+                              onChange={(e) => handleFieldChange(product._id, 'lowStockThreshold', parseInt(e.target.value) || 0)}
+                              className="w-20 mx-auto text-center"
+                            />
+                          </td>
+                          <td className="p-3 text-center">
+                            <Badge variant={status.variant} className={`gap-1 ${(status as any).className || ''}`}>
+                              <StatusIcon className="h-3 w-3" />
+                              {status.label}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-center">
+                            <Switch
+                              checked={edited?.isAvailable ?? product.isAvailable}
+                              onCheckedChange={(checked) => handleFieldChange(product._id, 'isAvailable', checked)}
+                            />
+                          </td>
+                          <td className="p-3 text-center">
+                            <Button
+                              size="sm"
+                              disabled={!hasChanges || saving === product._id}
+                              onClick={() => handleSaveProduct(product)}
+                            >
+                              {saving === product._id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
               {filteredProducts.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">
+                  No products found
+                </div>
+              )}
+            </div>
+
+            {/* Products Cards - Mobile */}
+            <div className="sm:hidden space-y-3">
+              {filteredProducts.map((product) => {
+                const status = getStockStatus(product);
+                const StatusIcon = status.icon;
+                const edited = editedProducts[product._id];
+                const hasChanges = edited && (
+                  edited.quantity !== undefined ||
+                  edited.lowStockThreshold !== undefined ||
+                  edited.isAvailable !== undefined
+                );
+
+                return (
+                  <div key={product._id} className="border rounded-lg p-4 space-y-3">
+                    {/* Product Header */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-muted-foreground">₱{product.price}/{product.unit}</div>
+                      </div>
+                      <Badge variant={status.variant} className={`gap-1 ${(status as any).className || ''}`}>
+                        <StatusIcon className="h-3 w-3" />
+                        {status.label}
+                      </Badge>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <Badge variant="outline" className="capitalize">{product.category}</Badge>
+                    </div>
+
+                    {/* Stock and Threshold inputs */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Stock</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={edited?.quantity ?? product.quantity}
+                          onChange={(e) => handleFieldChange(product._id, 'quantity', parseInt(e.target.value) || 0)}
+                          className="text-center"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Low Threshold</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={edited?.lowStockThreshold ?? product.lowStockThreshold}
+                          onChange={(e) => handleFieldChange(product._id, 'lowStockThreshold', parseInt(e.target.value) || 0)}
+                          className="text-center"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Available toggle and Save */}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={edited?.isAvailable ?? product.isAvailable}
+                          onCheckedChange={(checked) => handleFieldChange(product._id, 'isAvailable', checked)}
+                        />
+                        <span className="text-sm text-muted-foreground">Available</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={!hasChanges || saving === product._id}
+                        onClick={() => handleSaveProduct(product)}
+                      >
+                        {saving === product._id ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-1" />
+                        )}
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredProducts.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground border rounded-lg">
                   No products found
                 </div>
               )}

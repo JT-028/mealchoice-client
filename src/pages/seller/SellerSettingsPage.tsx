@@ -299,8 +299,8 @@ export function SellerSettingsPage() {
 
         {message.text && (
           <div className={`p-3 rounded-lg text-sm ${message.type === 'success'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-destructive/10 text-destructive'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+            : 'bg-destructive/10 text-destructive'
             }`}>
             {message.text}
           </div>
@@ -496,9 +496,20 @@ export function SellerSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {DAYS_OF_WEEK.map(({ key, label }) => (
-                  <div key={key} className="flex items-center gap-4 py-2 border-b last:border-0">
-                    <div className="w-28 font-medium">{label}</div>
-                    <div className="flex items-center gap-2">
+                  <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 border-b last:border-0">
+                    <div className="flex items-center justify-between sm:justify-start sm:w-28">
+                      <span className="font-medium">{label}</span>
+                      <div className="flex items-center gap-2 sm:hidden">
+                        <Switch
+                          checked={!operatingHours[key].isClosed}
+                          onCheckedChange={(checked) => handleDayHoursChange(key, 'isClosed', !checked)}
+                        />
+                        <span className="text-sm text-muted-foreground w-12">
+                          {operatingHours[key].isClosed ? 'Closed' : 'Open'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2">
                       <Switch
                         checked={!operatingHours[key].isClosed}
                         onCheckedChange={(checked) => handleDayHoursChange(key, 'isClosed', !checked)}
@@ -513,14 +524,14 @@ export function SellerSettingsPage() {
                           type="time"
                           value={operatingHours[key].open}
                           onChange={(e) => handleDayHoursChange(key, 'open', e.target.value)}
-                          className="w-32"
+                          className="w-full sm:w-28"
                         />
-                        <span className="text-muted-foreground">to</span>
+                        <span className="text-muted-foreground text-sm">to</span>
                         <Input
                           type="time"
                           value={operatingHours[key].close}
                           onChange={(e) => handleDayHoursChange(key, 'close', e.target.value)}
-                          className="w-32"
+                          className="w-full sm:w-28"
                         />
                       </div>
                     )}

@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { type User, getProfile } from '@/api/auth';
+import { PageLoader } from '@/components/PageLoader';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadingStartTime = Date.now();
+  const MIN_LOADING_TIME = 2000; // 2 seconds minimum
 
   // Helper function to apply theme
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
@@ -52,15 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (response.success && response.user) {
             setToken(storedToken);
             setUser(response.user);
-            
+
             // Sync theme from profile
             if (response.user.theme) {
               localStorage.setItem(THEME_KEY, response.user.theme);
               applyTheme(response.user.theme);
             }
-            
+
             console.log('[AuthContext] User set from API:', response.user);
-            
+
             // Apply saved theme from user settings
             if (response.user.theme) {
               applyTheme(response.user.theme);
@@ -78,7 +82,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
       } finally {
-        setIsLoading(false);
+        const elapsedTime = Date.now() - loadingStartTime;
+        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+
+        setTimeout(() => {
+          setIsLoading(false);
+        }, remainingTime);
       }
     };
 
@@ -91,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     localStorage.setItem(TOKEN_KEY, newToken);
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
-    
+
     // Sync theme on login
     if (newUser.theme) {
       localStorage.setItem(THEME_KEY, newUser.theme);
@@ -138,7 +147,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      <AnimatePresence mode="popLayout">
+        {isLoading ? (
+          <PageLoader key="main-loader" message="Preparing your meals..." />
+        ) : (
+          <motion.div
+            key="app-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="min-h-screen"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AuthContext.Provider>
   );
 }

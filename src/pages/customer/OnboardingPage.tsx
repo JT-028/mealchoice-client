@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { TutorialDialog } from '@/components/TutorialDialog';
 import { Check, HelpCircle, ChevronRight, Loader2, PartyPopper, Sparkles, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from '@/config/api';
 
@@ -268,6 +269,8 @@ export function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/10 dark:from-background dark:via-background dark:to-background text-foreground">
+            {/* Tutorial Dialog - shows on first login before onboarding */}
+            <TutorialDialog userType="customer" />
             <AnimatePresence mode="wait">
                 {isCompleted ? (
                     <motion.div

@@ -35,6 +35,7 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [videoEnded, setVideoEnded] = useState(false);
+    const [videoError, setVideoError] = useState(false);
     const playerRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +86,9 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
                     if (event.data === 0) {
                         setVideoEnded(true);
                     }
+                },
+                onError: () => {
+                    setVideoError(true);
                 }
             }
         });
@@ -93,10 +97,6 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
     useEffect(() => {
         // Show tutorial dialog if user hasn't watched it yet
         if (user && !user.hasWatchedTutorial) {
-            // For customers, only show after onboarding is completed
-            if (userType === 'customer' && !user.hasCompletedOnboarding) {
-                return;
-            }
             // Show the tutorial dialog
             setOpen(true);
         }
@@ -155,13 +155,30 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
                 <div className="px-6">
                     {/* YouTube Player Container */}
                     <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                        <div ref={containerRef} className="w-full h-full"></div>
+                        {videoError ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
+                                <Video className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="font-semibold text-lg mb-2">Video Unavailable</h3>
+                                <p className="text-muted-foreground text-sm mb-4">
+                                    The tutorial video couldn't be loaded. This may be due to network issues or video availability.
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    You can click "Skip Tutorial" below to continue without watching.
+                                </p>
+                            </div>
+                        ) : (
+                            <div ref={containerRef} className="w-full h-full"></div>
+                        )}
                     </div>
                 </div>
 
                 <div className="p-6 pt-4 flex justify-between items-center border-t mt-4">
                     <div className="flex items-center gap-2">
-                        {videoEnded ? (
+                        {videoError ? (
+                            <span className="text-xs text-amber-600">
+                                Video unavailable - you can skip the tutorial
+                            </span>
+                        ) : videoEnded ? (
                             <span className="text-xs text-green-600 flex items-center gap-1">
                                 <CheckCircle className="h-3 w-3" />
                                 Video completed!
@@ -179,11 +196,11 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
                             disabled={loading}
                         >
                             <X className="h-4 w-4 mr-1" />
-                            Watch Later
+                            {videoError ? 'Skip Tutorial' : 'Watch Later'}
                         </Button>
                         <Button
                             onClick={handleClose}
-                            disabled={loading || !videoEnded}
+                            disabled={loading || (!videoEnded && !videoError)}
                         >
                             {loading ? 'Saving...' : 'Got It!'}
                         </Button>

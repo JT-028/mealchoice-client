@@ -4,6 +4,7 @@ export interface Seller {
   _id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: string;
   marketLocation: string | null;
   stallName: string | null;
@@ -282,6 +283,7 @@ export interface Customer {
   _id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: string;
   isActive: boolean;
   isEmailVerified: boolean;
@@ -354,6 +356,66 @@ export async function activateCustomer(token: string, customerId: string): Promi
   const response = await fetch(`${API_BASE_URL}/admin/customers/${customerId}/activate`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// ============================================
+// Seller Registration Requests
+// ============================================
+
+export interface SellerRequest {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  preferredMarket: string;
+  stallName: string | null;
+  stallNumber: string | null;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
+export interface SellerRequestsResponse {
+  success: boolean;
+  message?: string;
+  count?: number;
+  statusCounts?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  requests?: SellerRequest[];
+}
+
+// Get seller requests
+export async function getSellerRequests(token: string, status?: string): Promise<SellerRequestsResponse> {
+  const url = status ? `${API_BASE_URL}/admin/seller-requests?status=${status}` : `${API_BASE_URL}/admin/seller-requests`;
+  const response = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Approve seller request
+export async function approveSellerRequest(token: string, requestId: string): Promise<SellerRequestsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/seller-requests/${requestId}/approve`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  return response.json();
+}
+
+// Reject seller request
+export async function rejectSellerRequest(token: string, requestId: string, reason?: string): Promise<SellerRequestsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/seller-requests/${requestId}/reject`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
   });
   return response.json();
 }

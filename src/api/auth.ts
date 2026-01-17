@@ -83,3 +83,29 @@ export async function markTutorialWatched(token: string): Promise<{ success: boo
 
   return response.json();
 }
+
+// Request password reset
+export async function forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  return response.json();
+}
+
+// Reset password with token
+export async function resetPassword(token: string, password: string): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/reset-password/${token}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  return response.json();
+}

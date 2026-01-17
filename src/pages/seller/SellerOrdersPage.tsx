@@ -502,6 +502,41 @@ export function SellerOrdersPage() {
                             </p>
                           )}
 
+                          {/* Delivery Address Section */}
+                          {order.deliveryType === 'delivery' && order.deliveryAddress && (
+                            <div className="mt-3 p-3 bg-blue-500/5 rounded-lg border border-blue-500/10">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Package className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-semibold">Delivery Information</span>
+                                <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-500/20 bg-blue-500/10 h-5 text-[10px]">
+                                  For Delivery
+                                </Badge>
+                              </div>
+                              <div className="space-y-1 text-sm">
+                                {order.deliveryAddress.fullAddress && (
+                                  <p className="text-foreground">{order.deliveryAddress.fullAddress}</p>
+                                )}
+                                {order.deliveryAddress.barangay && (
+                                  <p className="text-muted-foreground">
+                                    {order.deliveryAddress.barangay}
+                                    {order.deliveryAddress.city && `, ${order.deliveryAddress.city}`}
+                                    {order.deliveryAddress.province && `, ${order.deliveryAddress.province}`}
+                                  </p>
+                                )}
+                                {order.deliveryAddress.contactPhone && (
+                                  <p className="text-muted-foreground flex items-center gap-1">
+                                    <span>📞</span> {order.deliveryAddress.contactPhone}
+                                  </p>
+                                )}
+                                {order.deliveryAddress.deliveryNotes && (
+                                  <p className="text-muted-foreground italic mt-2 pt-2 border-t border-blue-500/10">
+                                    📝 Delivery Notes: "{order.deliveryAddress.deliveryNotes}"
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Payment Verification Section */}
                           <div className="border-t pt-3 mt-3">
                             <div className="flex items-center justify-between">

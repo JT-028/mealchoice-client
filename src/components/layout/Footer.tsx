@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { UtensilsCrossed } from 'lucide-react';
+import { LegalDialog } from '@/components/LegalDialog';
 
 export function Footer() {
   return (
@@ -65,15 +66,26 @@ export function Footer() {
             © {new Date().getFullYear()} Meal Choice. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Privacy Policy
-            </Link>
-            <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Terms of Service
-            </Link>
+            <LegalDialog
+              type="privacy"
+              trigger={
+                <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Privacy Policy
+                </button>
+              }
+            />
+            <LegalDialog
+              type="terms"
+              trigger={
+                <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Terms of Service
+                </button>
+              }
+            />
           </div>
         </div>
       </div>
     </footer>
   );
 }
+

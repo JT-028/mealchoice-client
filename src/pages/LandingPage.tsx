@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { SellerRequestDialog } from '@/components/SellerRequestDialog';
 import natureBg from '@/assets/nature-bg.png';
 import {
   UtensilsCrossed,
@@ -34,7 +35,7 @@ export function LandingPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[70vh] flex items-center">
         {/* Nature Background Image with refined visibility */}
-        <div 
+        <div
           className="absolute inset-0 z-0 scale-100 animate-subtle-zoom"
           style={{
             backgroundImage: `url(${natureBg})`,
@@ -46,30 +47,30 @@ export function LandingPage() {
             opacity: 0.95
           }}
         />
-        
+
         {/* Main Overlay - Adjusted for better visibility and readability */}
         <div className="absolute inset-0 z-10 bg-gradient-to-b from-background/30 via-transparent to-background/50" />
-        
+
         {/* Smooth Bottom Blend */}
         <div className="absolute bottom-0 left-0 right-0 h-96 z-15 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        
+
         {/* Safety buffer */}
         <div className="absolute bottom-0 left-0 right-0 h-16 z-15 bg-background" />
-        
+
         <div className="container relative z-20 mx-auto px-4 py-24 md:py-32">
           <div className="max-w-4xl mx-auto text-center">
             <Badge className="mb-6" variant="secondary">
               <Sparkles className="h-3 w-3 mr-1" />
               AI-Powered Meal Planning
             </Badge>
-            
+
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground mb-6">
               Smart Meals, Smart Budget{' '}
               <span className="text-primary">for Angeles City</span>
             </h1>
-            
+
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Plan nutritious meals, track your food budget, and order from local markets — 
+              Plan nutritious meals, track your food budget, and order from local markets —
               all in one, designed for Pampanga and San Nicolas markets.
             </p>
 
@@ -80,9 +81,14 @@ export function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-lg px-8">
-                <Link to="/login" className='text-muted-foreground'>I'm a Seller</Link>
-              </Button>
+              <SellerRequestDialog
+                trigger={
+                  <Button size="lg" variant="outline" className="text-lg px-8">
+                    <Store className="h-5 w-5 mr-2" />
+                    Become a Seller
+                  </Button>
+                }
+              />
             </div>
 
             {/* Stats */}
@@ -302,6 +308,14 @@ export function LandingPage() {
                     <span>Grow your customer base</span>
                   </li>
                 </ul>
+                <div className="mt-4 pt-4 border-t">
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link to="/login">
+                      <Store className="h-4 w-4 mr-2" />
+                      I'm Already a Seller
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

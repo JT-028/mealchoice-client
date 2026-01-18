@@ -178,6 +178,22 @@ export async function bulkArchiveOrders(
   return response.json();
 }
 
+// Bulk cancel orders (seller)
+export async function bulkCancelOrders(
+  token: string,
+  orderIds: string[]
+): Promise<OrdersResponse & { count?: number }> {
+  const response = await fetch(`${API_BASE_URL}/orders/bulk-cancel`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ orderIds }),
+  });
+  return response.json();
+}
+
 // Cancel order by customer
 export async function cancelOrderByCustomer(
   token: string,

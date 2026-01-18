@@ -38,13 +38,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  getAllCustomers, 
-  updateCustomer, 
-  deleteCustomer, 
-  deactivateCustomer, 
-  activateCustomer, 
-  type Customer 
+import {
+  getAllCustomers,
+  updateCustomer,
+  deleteCustomer,
+  deactivateCustomer,
+  activateCustomer,
+  type Customer
 } from '@/api/admin';
 import {
   Users,
@@ -56,7 +56,8 @@ import {
   Search,
   Power,
   PowerOff,
-  UserRound
+  UserRound,
+  Phone
 } from 'lucide-react';
 
 export function CustomersPage() {
@@ -256,6 +257,7 @@ export function CustomersPage() {
                     <TableHead>#</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Email Verified</TableHead>
                     <TableHead>Onboarding</TableHead>
@@ -274,6 +276,16 @@ export function CustomersPage() {
                         </div>
                       </TableCell>
                       <TableCell>{customer.email}</TableCell>
+                      <TableCell>
+                        {customer.phone ? (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{customer.phone}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {customer.isActive ? (
                           <Badge className="bg-primary">Active</Badge>
@@ -394,7 +406,7 @@ export function CustomersPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Customer Account</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete the customer account for "{selectedCustomer?.name}"? 
+                Are you sure you want to delete the customer account for "{selectedCustomer?.name}"?
                 This will permanently remove their account and cancel any pending orders. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>

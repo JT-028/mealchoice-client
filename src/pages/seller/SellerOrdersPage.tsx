@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { getSellerOrders, updateOrderStatus, verifyPayment, archiveOrder, bulkArchiveOrders, type Order } from '@/api/orders';
+import { getSellerOrders, updateOrderStatus, verifyPayment, archiveOrder, bulkArchiveOrders, bulkCancelOrders, type Order } from '@/api/orders';
 import {
   Dialog,
   DialogContent,
@@ -142,6 +142,15 @@ export function SellerOrdersPage() {
     );
   }, [filteredOrders, selectedOrders]);
 
+  // Get cancellable orders from selection (pending or preparing, not archived)
+  const cancellableSelectedOrders = useMemo(() => {
+    return filteredOrders.filter(o =>
+      selectedOrders.has(o._id) &&
+      ['pending', 'preparing'].includes(o.status) &&
+      !o.isArchived
+    );
+  }, [filteredOrders, selectedOrders]);
+
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     if (!token) return;
 
@@ -212,6 +221,26 @@ export function SellerOrdersPage() {
       }
     } catch (error) {
       console.error('Error bulk archiving:', error);
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const handleBulkCancel = async () => {
+    if (!token) return;
+
+    const orderIds = cancellableSelectedOrders.map(o => o._id);
+    if (orderIds.length === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const response = await bulkCancelOrders(token, orderIds);
+      if (response.success) {
+        setSelectedOrders(new Set());
+        fetchOrders();
+      }
+    } catch (error) {
+      console.error('Error bulk cancelling:', error);
     } finally {
       setBulkProcessing(false);
     }
@@ -381,12 +410,29 @@ export function SellerOrdersPage() {
               </Button>
             )}
 
+            {cancellableSelectedOrders.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkCancel}
+                disabled={bulkProcessing}
+                className="gap-1 text-destructive border-destructive/50 hover:bg-destructive/10"
+              >
+                {bulkProcessing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <XCircle className="h-3 w-3" />
+                )}
+                Cancel Selected ({cancellableSelectedOrders.length})
+              </Button>
+            )}
+
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setSelectedOrders(new Set())}
             >
-              Clear
+              Clear Selection
             </Button>
           </div>
         )}
@@ -576,6 +622,23 @@ export function SellerOrdersPage() {
                                     <CreditCard className="h-3 w-3 mr-1" />
                                   )}
                                   Mark as Paid
+                                </Button>
+                              )}
+
+                              {order.paymentMethod === 'qr' && !order.isPaymentVerified && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleVerifyPayment(order._id)}
+                                  disabled={isVerifying}
+                                  className="border-green-200 hover:bg-green-50 text-green-700"
+                                >
+                                  {isVerifying ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                  ) : (
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                  )}
+                                  Verify Payment
                                 </Button>
                               )}
                             </div>

@@ -38,7 +38,21 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAllSellers, updateSeller, deleteSeller, createSeller, deactivateSeller, activateSeller, type Seller } from '@/api/admin';
+import type {
+  Seller,
+  SellerRequest,
+} from '@/api/admin';
+import {
+  getAllSellers,
+  updateSeller,
+  deleteSeller,
+  createSeller,
+  deactivateSeller,
+  activateSeller,
+  getSellerRequests,
+  approveSellerRequest,
+  rejectSellerRequest
+} from '@/api/admin';
 import {
   Users,
   Loader2,
@@ -52,13 +66,19 @@ import {
   Power,
   PowerOff,
   Store,
-  AlertCircle
+  AlertCircle,
+  Phone,
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 export function SellersPage() {
   const { token } = useAuth();
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [sellerRequests, setSellerRequests] = useState<SellerRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMarket, setFilterMarket] = useState<string>('all');
 
@@ -129,8 +149,49 @@ export function SellersPage() {
     }
   };
 
+  const fetchSellerRequests = async () => {
+    if (!token) return;
+    setRequestsLoading(true);
+    try {
+      const response = await getSellerRequests(token);
+      if (response.success && response.requests) {
+        setSellerRequests(response.requests);
+      }
+    } catch (error) {
+      console.error('Error fetching seller requests:', error);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string) => {
+    if (!token) return;
+    try {
+      const response = await approveSellerRequest(token, requestId);
+      if (response.success) {
+        fetchSellerRequests();
+        fetchSellers();
+      }
+    } catch (error) {
+      console.error('Error approving request:', error);
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    if (!token) return;
+    try {
+      const response = await rejectSellerRequest(token, requestId);
+      if (response.success) {
+        fetchSellerRequests();
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSellers();
+    fetchSellerRequests();
   }, [token, filterMarket]);
 
   const handleEditClick = (seller: Seller) => {
@@ -263,6 +324,61 @@ export function SellersPage() {
           </Button>
         </div>
 
+        {/* Pending Seller Requests */}
+        {sellerRequests.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="h-5 w-5 text-amber-600" />
+                Pending Seller Requests ({sellerRequests.length})
+              </CardTitle>
+              <CardDescription>Review and approve seller account requests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {sellerRequests.map((request) => (
+                  <div key={request._id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                    <div className="space-y-1">
+                      <div className="font-medium">{request.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {request.email} • {request.phone}
+                      </div>
+                      <div className="text-sm">
+                        <Badge variant="outline" className="text-xs">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {request.preferredMarket}
+                        </Badge>
+                        {request.stallName && (
+                          <span className="ml-2 text-muted-foreground">Stall: {request.stallName}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveRequest(request._id)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRejectRequest(request._id)}
+                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1 max-w-md">
@@ -322,6 +438,7 @@ export function SellersPage() {
                     <TableHead>#</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Market</TableHead>
                     <TableHead>Stall Name</TableHead>
                     <TableHead>Stall No.</TableHead>
@@ -342,6 +459,16 @@ export function SellersPage() {
                         </div>
                       </TableCell>
                       <TableCell>{seller.email}</TableCell>
+                      <TableCell>
+                        {seller.phone ? (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{seller.phone}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {seller.marketLocation ? (
                           <Badge variant="outline" className="gap-1">

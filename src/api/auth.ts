@@ -109,3 +109,26 @@ export async function resetPassword(token: string, password: string): Promise<{ 
 
   return response.json();
 }
+
+// Submit seller registration request
+export interface SellerRequestData {
+  name: string;
+  email: string;
+  phone: string;
+  preferredMarket: string;
+  stallName?: string;
+  stallNumber?: string;
+  message?: string;
+}
+
+export async function submitSellerRequest(data: SellerRequestData): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/seller-request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+}

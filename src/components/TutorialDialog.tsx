@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Video, X, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { markTutorialWatched } from '@/api/auth';
@@ -30,43 +31,37 @@ declare global {
     }
 }
 
+let youtubeApiPromise: Promise<void> | null = null;
+
+const loadYouTubeApi = () => {
+    if (window.YT && window.YT.Player) {
+        return Promise.resolve();
+    }
+
+    if (!youtubeApiPromise) {
+        youtubeApiPromise = new Promise((resolve) => {
+            const previousReady = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = () => {
+                previousReady?.();
+                resolve();
+            };
+        });
+    }
+
+    return youtubeApiPromise;
+};
+
+
 export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
     const { token, user, updateUser } = useAuth();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [videoEnded, setVideoEnded] = useState(false);
     const [videoError, setVideoError] = useState(false);
+    const [videoLoading, setVideoLoading] = useState(false);
     const playerRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-
-    // Load YouTube IFrame API
-    useEffect(() => {
-        if (!open) return;
-
-        // Check if API is already loaded
-        if (window.YT && window.YT.Player) {
-            initPlayer();
-            return;
-        }
-
-        // Load the YouTube IFrame API script
-        const tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-        // Set up callback for when API is ready
-        window.onYouTubeIframeAPIReady = () => {
-            initPlayer();
-        };
-
-        return () => {
-            if (playerRef.current) {
-                playerRef.current.destroy();
-                playerRef.current = null;
-            }
-        };
-    }, [open]);
+    const timeoutRef = useRef<number | null>(null);
 
     const initPlayer = useCallback(() => {
         if (!containerRef.current || playerRef.current) return;
@@ -79,8 +74,15 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
                 rel: 0,
                 modestbranding: 1,
                 enablejsapi: 1,
+                origin: window.location.origin,
             },
             events: {
+                onReady: () => {
+                    setVideoLoading(false);
+                    if (timeoutRef.current) {
+                        window.clearTimeout(timeoutRef.current);
+                    }
+                },
                 onStateChange: (event: any) => {
                     // State 0 = ended
                     if (event.data === 0) {
@@ -89,10 +91,55 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
                 },
                 onError: () => {
                     setVideoError(true);
+                    setVideoLoading(false);
                 }
             }
         });
     }, [userType]);
+
+    // Load YouTube IFrame API
+    useEffect(() => {
+        if (!open) return;
+
+        let isMounted = true;
+
+        setVideoEnded(false);
+        setVideoError(false);
+        setVideoLoading(true);
+
+        if (timeoutRef.current) {
+            window.clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = window.setTimeout(() => {
+            if (!playerRef.current) {
+                setVideoError(true);
+                setVideoLoading(false);
+            }
+        }, 5000);
+
+        loadYouTubeApi()
+            .then(() => {
+                if (!isMounted) return;
+                initPlayer();
+            })
+            .catch(() => {
+                if (!isMounted) return;
+                setVideoError(true);
+                setVideoLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+            if (timeoutRef.current) {
+                window.clearTimeout(timeoutRef.current);
+            }
+            if (playerRef.current) {
+                playerRef.current.destroy();
+                playerRef.current = null;
+            }
+        };
+    }, [open, initPlayer]);
 
     useEffect(() => {
         // Show tutorial dialog if user hasn't watched it yet
@@ -128,6 +175,9 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
             playerRef.current.destroy();
             playerRef.current = null;
         }
+        if (timeoutRef.current) {
+            window.clearTimeout(timeoutRef.current);
+        }
         setOpen(false);
     };
 
@@ -154,7 +204,15 @@ export function TutorialDialog({ userType, onComplete }: TutorialDialogProps) {
 
                 <div className="px-6">
                     {/* YouTube Player Container */}
-                    <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                    <div className="aspect-video bg-muted rounded-lg overflow-hidden relative">
+                        {videoLoading && !videoError ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
+                                <Skeleton className="h-10 w-32" />
+                                <Skeleton className="h-4 w-48" />
+                                <Skeleton className="h-4 w-40" />
+                                <Skeleton className="h-4 w-28" />
+                            </div>
+                        ) : null}
                         {videoError ? (
                             <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
                                 <Video className="h-12 w-12 text-muted-foreground mb-4" />

@@ -589,7 +589,7 @@ export function AdminSettingsPage() {
             {/* Backup Status Card */}
             {backupSettings?.lastBackupAt && (
               <Card>
-                <CardContent className="pt-6">
+                <CardContent>
                   <div className="flex items-center gap-4">
                     {backupSettings.lastBackupStatus === 'success' ? (
                       <CheckCircle className="h-8 w-8 text-green-500" />

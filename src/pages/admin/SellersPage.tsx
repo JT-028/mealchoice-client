@@ -325,59 +325,75 @@ export function SellersPage() {
         </div>
 
         {/* Pending Seller Requests */}
-        {sellerRequests.length > 0 && (
+        {(requestsLoading || sellerRequests.length > 0) && (
           <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Clock className="h-5 w-5 text-amber-600" />
-                Pending Seller Requests ({sellerRequests.length})
+                Pending Seller Requests
+                {sellerRequests.length > 0 && ` (${sellerRequests.length})`}
+                {requestsLoading && <Loader2 className="h-4 w-4 animate-spin text-amber-600" />}
               </CardTitle>
-              <CardDescription>Review and approve seller account requests</CardDescription>
+              <CardDescription>
+                {requestsLoading && sellerRequests.length === 0
+                  ? 'Loading seller requests...'
+                  : 'Review and approve seller account requests'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {sellerRequests.map((request) => (
-                  <div key={request._id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
-                    <div className="space-y-1">
-                      <div className="font-medium">{request.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {request.email} • {request.phone}
+              {requestsLoading && sellerRequests.length === 0 ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading seller requests...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {sellerRequests.map((request) => (
+                    <div key={request._id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                      <div className="space-y-1">
+                        <div className="font-medium">{request.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {request.email} • {request.phone}
+                        </div>
+                        <div className="text-sm">
+                          <Badge variant="outline" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {request.preferredMarket}
+                          </Badge>
+                          {request.stallName && (
+                            <span className="ml-2 text-muted-foreground">Stall: {request.stallName}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <Badge variant="outline" className="text-xs">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {request.preferredMarket}
-                        </Badge>
-                        {request.stallName && (
-                          <span className="ml-2 text-muted-foreground">Stall: {request.stallName}</span>
-                        )}
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApproveRequest(request._id)}
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={requestsLoading}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRejectRequest(request._id)}
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                          disabled={requestsLoading}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleApproveRequest(request._id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRejectRequest(request._id)}
-                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
+
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">

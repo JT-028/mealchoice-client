@@ -37,6 +37,7 @@ export interface Order {
   isArchived?: boolean;
   deliveryType: 'pickup' | 'delivery';
   deliveryAddress?: DeliveryAddress;
+  deliveryFee?: number;
 }
 
 export interface OrdersResponse {

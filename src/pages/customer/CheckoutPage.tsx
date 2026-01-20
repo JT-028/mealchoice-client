@@ -76,6 +76,23 @@ export function CheckoutPage() {
     deliveryNotes: ''
   });
 
+  // Calculate delivery fee based on address
+  const calculateDeliveryFee = (): number => {
+    if (deliveryType !== 'delivery') return 0;
+
+    const addressToUse = selectedAddressId
+      ? savedAddresses.find(a => a._id === selectedAddressId)
+      : newAddress;
+
+    if (!addressToUse?.city) return 0;
+
+    const city = addressToUse.city.toLowerCase();
+    return city.includes('angeles') ? 25 : 50;
+  };
+
+  const deliveryFee = calculateDeliveryFee();
+  const totalWithDelivery = totalPrice + deliveryFee;
+
   // Group items by seller
   const itemsBySeller = items.reduce((acc, item) => {
     if (!acc[item.sellerId]) {
@@ -199,8 +216,8 @@ export function CheckoutPage() {
   };
 
   // Check if order exceeds remaining budget
-  const exceedsDailyBudget = spending ? totalPrice > spending.dailyRemaining : false;
-  const exceedsWeeklyBudget = spending ? totalPrice > spending.weeklyRemaining : false;
+  const exceedsDailyBudget = spending ? totalWithDelivery > spending.dailyRemaining : false;
+  const exceedsWeeklyBudget = spending ? totalWithDelivery > spending.weeklyRemaining : false;
   const exceedsBudget = exceedsDailyBudget || exceedsWeeklyBudget;
 
   const handleConfirmOrder = () => {
@@ -353,19 +370,19 @@ export function CheckoutPage() {
               <div className="flex-1">
                 <h3 className="font-semibold text-amber-700 dark:text-amber-300">Order Exceeds Budget</h3>
                 <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                  This order of <strong>{formatCurrency(totalPrice)}</strong> will exceed your remaining budget:
+                  This order of <strong>{formatCurrency(totalWithDelivery)}</strong> will exceed your remaining budget:
                 </p>
                 <ul className="text-sm text-amber-600 dark:text-amber-400 mt-2 space-y-1">
                   {exceedsDailyBudget && (
                     <li>
                       • Daily: {formatCurrency(spending.dailyRemaining)} remaining of {formatCurrency(spending.dailyLimit)}
-                      <span className="font-medium"> ({formatCurrency(totalPrice - spending.dailyRemaining)} over)</span>
+                      <span className="font-medium"> ({formatCurrency(totalWithDelivery - spending.dailyRemaining)} over)</span>
                     </li>
                   )}
                   {exceedsWeeklyBudget && (
                     <li>
                       • Weekly: {formatCurrency(spending.weeklyRemaining)} remaining of {formatCurrency(spending.weeklyLimit)}
-                      <span className="font-medium"> ({formatCurrency(totalPrice - spending.weeklyRemaining)} over)</span>
+                      <span className="font-medium"> ({formatCurrency(totalWithDelivery - spending.weeklyRemaining)} over)</span>
                     </li>
                   )}
                 </ul>
@@ -531,10 +548,13 @@ export function CheckoutPage() {
                   <RadioGroupItem value="delivery" id="delivery" />
                   <Label htmlFor="delivery" className="flex items-center gap-2 cursor-pointer flex-1">
                     <Truck className="h-5 w-5 text-blue-500" />
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium">Home Delivery</p>
                       <p className="text-sm text-muted-foreground">Seller will arrange delivery</p>
                     </div>
+                    {deliveryType === 'delivery' && deliveryFee > 0 && (
+                      <span className="text-sm font-medium text-primary">+{formatCurrency(deliveryFee)}</span>
+                    )}
                   </Label>
                 </div>
               ) : (
@@ -675,9 +695,24 @@ export function CheckoutPage() {
         {/* Total */}
         <Card>
           <CardContent className="pt-6">
+            {deliveryType === 'delivery' && deliveryFee > 0 && (
+              <div className="space-y-2 mb-4 pb-4 border-b">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>{formatCurrency(totalPrice)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Delivery Fee</span>
+                  <span className="text-primary">{formatCurrency(deliveryFee)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  ₱25 within Angeles City • ₱50 outside Angeles City
+                </p>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold mb-4">
               <span>Total</span>
-              <span className="text-primary">{formatCurrency(totalPrice)}</span>
+              <span className="text-primary">{formatCurrency(totalWithDelivery)}</span>
             </div>
 
             <Button
@@ -720,20 +755,20 @@ export function CheckoutPage() {
             </AlertDialogTitle>
             <AlertDialogDescription className="text-left space-y-2">
               <p>
-                This order of <strong>{formatCurrency(totalPrice)}</strong> will put you over your budget:
+                This order of <strong>{formatCurrency(totalWithDelivery)}</strong> will put you over your budget:
               </p>
               {spending && (
                 <ul className="list-disc pl-5 space-y-1">
                   {exceedsDailyBudget && spending && (
                     <li>
                       Daily budget: {formatCurrency(spending.dailyRemaining)} remaining →
-                      <span className="text-destructive font-medium"> {formatCurrency(totalPrice - spending.dailyRemaining)} over</span>
+                      <span className="text-destructive font-medium"> {formatCurrency(totalWithDelivery - spending.dailyRemaining)} over</span>
                     </li>
                   )}
                   {exceedsWeeklyBudget && spending && (
                     <li>
                       Weekly budget: {formatCurrency(spending.weeklyRemaining)} remaining →
-                      <span className="text-destructive font-medium"> {formatCurrency(totalPrice - spending.weeklyRemaining)} over</span>
+                      <span className="text-destructive font-medium"> {formatCurrency(totalWithDelivery - spending.weeklyRemaining)} over</span>
                     </li>
                   )}
                 </ul>

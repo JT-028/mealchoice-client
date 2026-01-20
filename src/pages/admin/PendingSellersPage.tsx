@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ export function PendingSellersPage() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  
+
   // Verify dialog
   const [verifyDialog, setVerifyDialog] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
@@ -43,7 +44,7 @@ export function PendingSellersPage() {
 
   const fetchSellers = async () => {
     if (!token) return;
-    
+
     try {
       const response = await getPendingSellers(token);
       if (response.success && response.sellers) {
@@ -75,9 +76,13 @@ export function PendingSellersPage() {
       if (response.success) {
         setSellers(sellers.filter(s => s._id !== selectedSeller._id));
         setVerifyDialog(false);
+        toast.success(`${selectedSeller.name} has been approved and assigned to ${selectedMarket}`);
+      } else {
+        toast.error(response.message || 'Failed to verify seller');
       }
     } catch (error) {
       console.error('Error verifying seller:', error);
+      toast.error('An error occurred while verifying the seller');
     } finally {
       setProcessingId(null);
     }
@@ -86,14 +91,19 @@ export function PendingSellersPage() {
   const handleReject = async (sellerId: string) => {
     if (!token) return;
 
+    const sellerToReject = sellers.find(s => s._id === sellerId);
     setProcessingId(sellerId);
     try {
       const response = await rejectSeller(token, sellerId);
       if (response.success) {
         setSellers(sellers.filter(s => s._id !== sellerId));
+        toast.success(`${sellerToReject?.name || 'Seller'}'s registration has been rejected`);
+      } else {
+        toast.error(response.message || 'Failed to reject seller');
       }
     } catch (error) {
       console.error('Error rejecting seller:', error);
+      toast.error('An error occurred while rejecting the seller');
     } finally {
       setProcessingId(null);
     }
@@ -133,7 +143,7 @@ export function PendingSellersPage() {
           <div className="grid gap-4">
             {sellers.map((seller) => {
               const isProcessing = processingId === seller._id;
-              
+
               return (
                 <Card key={seller._id}>
                   <CardHeader>
@@ -196,7 +206,7 @@ export function PendingSellersPage() {
                 Assign a market location to {selectedSeller?.name}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Market Location</label>
@@ -226,8 +236,8 @@ export function PendingSellersPage() {
               <Button variant="outline" onClick={() => setVerifyDialog(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleVerify} 
+              <Button
+                onClick={handleVerify}
                 disabled={!selectedMarket || processingId !== null}
               >
                 {processingId ? (

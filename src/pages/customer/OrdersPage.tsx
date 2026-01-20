@@ -780,6 +780,22 @@ export function OrdersPage() {
                           </td>
                         </tr>
                       ))}
+                      {selectedOrder.deliveryFee && selectedOrder.deliveryFee > 0 && (
+                        <>
+                          <tr style={{ borderTop: '1px solid #ddd' }}>
+                            <td colSpan={2} style={{ padding: '8px', textAlign: 'right', color: '#666' }}>Subtotal:</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>
+                              ₱{(selectedOrder.total - selectedOrder.deliveryFee).toFixed(2)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colSpan={2} style={{ padding: '8px', textAlign: 'right', color: '#666' }}>Delivery Fee:</td>
+                            <td style={{ padding: '8px', textAlign: 'right', color: '#4CAF50' }}>
+                              ₱{selectedOrder.deliveryFee.toFixed(2)}
+                            </td>
+                          </tr>
+                        </>
+                      )}
                     </tbody>
                     <tfoot>
                       <tr style={{ background: '#f5f5f5', fontWeight: 'bold' }}>
